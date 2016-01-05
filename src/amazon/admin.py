@@ -1,3 +1,15 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Search, Item
+
+
+@admin.register(Search)
+class SearchAdmin(admin.ModelAdmin):
+
+    pass
+
+
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+
+    pass
