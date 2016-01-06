@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
-import djcelery
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -42,8 +40,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'debug_toolbar',
     'import_export',
-    'amazon',
-    'ebay',
+    'lister',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -131,10 +128,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-
 
 # Logging
 
@@ -169,13 +162,3 @@ LOGGING = {
         # },
     },
 }
-
-
-# celery
-
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_SEND_EVENTS = True
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
-
-djcelery.setup_loader()
