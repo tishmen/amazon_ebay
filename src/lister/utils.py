@@ -7,6 +7,7 @@ from amazon.api import AmazonAPI
 from bs4 import BeautifulSoup
 
 from django.conf import settings
+from django.utils import timezone
 
 from .models import AmazonItem
 
@@ -29,6 +30,7 @@ class Amazon(object):
             self.connection = None
             logger.error(traceback.format_exc())
             logger.error('Failed to establish Amazon API connection')
+        self.total_count = 0
 
     def get_review_count(self, title, url, has_review, review_url):
         if not has_review:
@@ -42,11 +44,13 @@ class Amazon(object):
                 'Review count for Amazon item {} from url {} is {}'.format(title, url, count)
             )
             return count
-        except:
-            logger.error(traceback.format_exc())
+        except AttributeError:
             logger.warning(
                 'Review count for Amazon item {} from url {} not found'.format(title, url)
             )
+            return 0
+        except:
+            logger.error(traceback.format_exc())
             return 0
 
     def parse_result(self, result, search_obj):
@@ -75,37 +79,35 @@ class Amazon(object):
         logger.info(message.strip())
         return item
 
-    def search(self, search_objs):
-        if not self.connection:
-            return
-        for search_obj in search_objs:
-            total_count = 0
-            try:
-                results = list(
-                    self.connection.search(Keywords=search_obj.query, SearchIndex='All')
+    def search(self, search_obj):
+        try:
+            results = list(
+                reversed(
+                    list(self.connection.search(Keywords=search_obj.query, SearchIndex='All'))
                 )
-                logger.info(
-                    'Got {} search results from Amazon API for query {}'.format(
-                        len(results), search_obj.query
-                    )
+            )
+            logger.info(
+                'Got {} search results from Amazon API for query {}'.format(
+                    len(results), search_obj.query
                 )
-            except:
-                results = []
-                logger.error(traceback.format_exc())
-                logger.warning(
-                    'Got 0 search results from Amazon API for query {}'.format(search_obj.query)
-                )
-            count = 0
-            for result in results:
-                if count > MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
-                    logger.info('Reached maximum Amazon item count per search limit')
-                    break
-                result = self.parse_result(result, search_obj)
-                item_obj = AmazonItem(**result)
-                if item_obj.is_valid():
-                    item_obj.save()
-                    logger.info('Saved amazon item: {}'.format(item_obj.title))
-                    count += 1
-            logger.info('Saved {} amazon items for query {}'.format(count, search_obj.query))
-            total_count += count
-        logger.info('Saved total of {} amazon items'.format(total_count))
+            )
+        except:
+            results = []
+            logger.error(traceback.format_exc())
+            logger.warning(
+                'Got 0 search results from Amazon API for query {}'.format(search_obj.query)
+            )
+        count = 0
+        for result in results:
+            if count > MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
+                logger.info('Reached maximum Amazon item count per search limit')
+                break
+            result = self.parse_result(result, search_obj)
+            item_obj = AmazonItem(**result)
+            if item_obj.is_valid():
+                item_obj.save()
+                count += 1
+        logger.info('Saved {} amazon items for query {}'.format(count, search_obj.query))
+        search_obj.date_searched = timezone.now()
+        search_obj.save()
+        self.total_count += count

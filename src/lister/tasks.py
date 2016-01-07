@@ -13,6 +13,10 @@ def search_task(self, queryset):
     logger.info('Starting Amazon search task')
     try:
         amazon = Amazon()
-        amazon.search(queryset)
+        if not amazon.connection:
+            return
+        for search_obj in queryset:
+            amazon.search(search_obj)
+        logger.info('Saved total of {} amazon items'.format(amazon.total_count))
     except:
         logger.error(traceback.format_exc())

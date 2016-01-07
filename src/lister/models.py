@@ -1,6 +1,10 @@
 import json
+import logging
+import traceback
 
 from django.db import models
+
+logger = logging.getLogger(__name__)
 
 MIN_AMAZON_ITEM_PRICE = 35
 MIN_AMAZON_ITEM_IMAGE_COUNT = 2
@@ -46,14 +50,40 @@ class AmazonItem(models.Model):
 
     def is_valid(self):
         if self.price < MIN_AMAZON_ITEM_PRICE:
+            logger.info(
+                'Less than minimum amazon item price {} for item {} with price {}'.format(
+                    MIN_AMAZON_ITEM_PRICE, self.title, self.price
+                )
+            )
             return
         if len(self.image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
+            logger.info(
+                'Less than minimum item image count {} for item {} with image count of {}'.format(
+                    MIN_AMAZON_ITEM_IMAGE_COUNT, self.title, len(self.image_list)
+                )
+            )
             return
         if self.review_count < MIN_AMAZON_ITEM_REVIEW_COUNT:
+            logger.info(
+                'Less than minimum item review count {} for item {} with review count of '
+                '{}'.format(MIN_AMAZON_ITEM_REVIEW_COUNT, self.title, self.review_count)
+            )
             return
         if self.review_count > MAX_AMAZON_ITEM_REVIEW_COUNT:
+            logger.info(
+                'More than maximum allowed item review count {} for item {} with review count '
+                '{}'.format(MAX_AMAZON_ITEM_REVIEW_COUNT, self.title, self.review_count)
+            )
             return
         return True
+
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            logger.info('Saved amazon item: {}'.format(self.title))
+        except:
+            logger.error(traceback.format_exc())
+            logger.warn('Failed to save amazon item: {}'.format(self.title))
 
     def __str__(self):
         return self.title
