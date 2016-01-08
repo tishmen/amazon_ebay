@@ -4,6 +4,7 @@ from import_export import resources
 from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
+from django.db import models
 
 from .models import AmazonSearch, AmazonItem
 from .tasks import search_task
@@ -28,14 +29,36 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
+class AmazonItemInline(admin.TabularInline):
+
+    model = AmazonItem
+    exclude = [
+        'url', 'feature_list', 'image_list', 'manufacturer', 'mpn',
+        'review_count'
+    ]
+    readonly_fields = ['title', 'url_', 'price', 'date_added']
+    extra = 0
+    max_num = 0
+    can_delete = False
+
+
 @admin.register(AmazonSearch)
 class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     resource_class = AmazonSearchResource
-    list_display = ['query', 'date_searched']
+    list_display = ['query', 'date_searched', 'result_count']
     list_filter = ['date_searched']
     search_fields = ['query']
     actions = ['search']
+    inlines = [AmazonItemInline]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.annotate(models.Count('amazonitem'))
+        return qs
+
+    def result_count(self, obj):
+        return obj.amazonitem__count
 
     def search(self, request, queryset):
         count = queryset.count()
@@ -46,6 +69,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
 
+    result_count.admin_order_field = 'amazonitem__count'
     search.short_description = 'Run search task for selected queries'
 
 

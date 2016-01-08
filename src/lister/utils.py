@@ -1,3 +1,4 @@
+import json
 import re
 import logging
 import traceback
@@ -62,7 +63,7 @@ class Amazon(object):
     def get_image_list(self, result):
         image_list = []
         for url in [str(image.LargeImage.URL) for image in result.images]:
-            response = requests.get(url, headers={'Range': 'bytes=0-1000'})
+            response = requests.get(url)
             image = Image.open(BytesIO(response.content))
             height, width = image.size
             if height >= 500 or width >= 500:
@@ -72,12 +73,12 @@ class Amazon(object):
                 len(image_list), result.title
             )
         )
-        return image_list
+        return json.dumps(image_list)
 
     def parse_result(self, result, search_obj):
         url = '/'.join(result.offer_url.split('/')[:-1])
         title = result.title
-        feature_list = result.features
+        feature_list = json.dumps(result.features)
         image_list = self.get_image_list(result)
         price = result.price_and_currency[0] or result.list_price[0] or 0
         manufacturer = result.manufacturer
@@ -129,9 +130,15 @@ class Amazon(object):
             result = self.parse_result(result, search_obj)
             item_obj = AmazonItem(**result)
             if item_obj.is_valid():
-                item_obj.save()
-                logger.info('Saved amazon item: {}'.format(item_obj.title))
-                count += 1
+                try:
+                    item_obj.save()
+                    logger.info('Saved amazon item: {}'.format(item_obj.title))
+                    count += 1
+                except:
+                    logger.error(traceback.format_exc())
+                    logger.warning(
+                        'Failed to save amazon item: {}'.format(item_obj.title)
+                    )
         logger.info(
             'Saved {} amazon items for query {}'.format(
                 count, search_obj.query

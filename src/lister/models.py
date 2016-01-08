@@ -11,13 +11,8 @@ MIN_AMAZON_ITEM_REVIEW_COUNT = 10
 MAX_AMAZON_ITEM_REVIEW_COUNT = 30
 
 
-class ArrayField(models.TextField):
-
-    def get_prep_value(self, value):
-        return json.dumps(value)
-
-    def to_python(self, value):
-        return json.loads(value)
+def to_list(value):
+    return json.loads(value)
 
 
 class AmazonSearch(models.Model):
@@ -39,8 +34,8 @@ class AmazonItem(models.Model):
 
     url = models.URLField(unique=True)
     title = models.TextField()
-    feature_list = ArrayField()
-    image_list = ArrayField()
+    feature_list = models.TextField()
+    image_list = models.TextField()
     price = models.FloatField()
     manufacturer = models.TextField(null=True)
     mpn = models.TextField(null=True)
@@ -54,12 +49,13 @@ class AmazonItem(models.Model):
                 ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
             )
             return
-        if len(self.image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
+        image_list = to_list(self.image_list)
+        if len(image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
             logger.info(
                 'Less than minimum item image count {} for item {} with image '
                 'count of {}'.format(
                     MIN_AMAZON_ITEM_IMAGE_COUNT, self.title,
-                    len(self.image_list)
+                    len(image_list)
                 )
             )
             return
@@ -86,19 +82,17 @@ class AmazonItem(models.Model):
 
     def feature_list_(self):
         feature_list = ''
-        for feature in self.feature_list[1:-1].split(', '):
+        for feature in to_list(self.feature_list):
             if feature:
-                feature_list += '{}\n'.format(feature[1:-1])
+                feature_list += '{}\n'.format(feature)
         return feature_list.strip()
 
     def image_list_(self):
         image_list = ''
-        for image in self.image_list[1:-1].split(', '):
+        for image in to_list(self.image_list):
             if image:
                 image_list += (
-                    '<a href="{0}" target="_blank">{0}</a><br>'.format(
-                        image[1:-1]
-                    )
+                    '<a href="{0}" target="_blank">{0}</a><br>'.format(image)
                 )
         return image_list[:-4]
 
