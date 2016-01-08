@@ -49,6 +49,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_display = ['query', 'date_searched', 'result_count']
     list_filter = ['date_searched']
     search_fields = ['query']
+    readonly_fields = ['query', 'date_searched']
     actions = ['search']
     inlines = [AmazonItemInline]
 

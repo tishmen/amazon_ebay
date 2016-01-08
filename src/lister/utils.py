@@ -120,6 +120,8 @@ class Amazon(object):
                     search_obj.query
                 )
             )
+        search_obj.date_searched = timezone.now()
+        search_obj.save()
         count = 0
         for result in results:
             if count > MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
@@ -144,6 +146,4 @@ class Amazon(object):
                 count, search_obj.query
             )
         )
-        search_obj.date_searched = timezone.now()
-        search_obj.save()
         self.total_count += count

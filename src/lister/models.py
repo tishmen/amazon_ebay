@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.contrib.auth.models import User
 from django.db import models
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class AmazonSearch(models.Model):
 class AmazonItem(models.Model):
 
     search = models.ForeignKey('AmazonSearch')
+    reviewer = models.ForeignKey(User, null=True, blank=True)
 
     url = models.URLField(unique=True)
     title = models.TextField()
