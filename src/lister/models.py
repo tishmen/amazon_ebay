@@ -1,6 +1,5 @@
 import json
 import logging
-import traceback
 
 from django.db import models
 
@@ -42,7 +41,7 @@ class AmazonItem(models.Model):
     title = models.TextField()
     feature_list = ArrayField()
     image_list = ArrayField(verbose_name='list of images')
-    price = models.DecimalField(max_digits=8, decimal_places=2)
+    price = models.FloatField()
     manufacturer = models.TextField(null=True)
     mpn = models.TextField(null=True)
     review_count = models.PositiveIntegerField(
@@ -84,13 +83,12 @@ class AmazonItem(models.Model):
             return
         return True
 
-    def save(self, *args, **kwargs):
-        try:
-            super().save(*args, **kwargs)
-            logger.info('Saved amazon item: {}'.format(self.title))
-        except:
-            logger.error(traceback.format_exc())
-            logger.warn('Failed to save amazon item: {}'.format(self.title))
-
     def __str__(self):
         return self.title
+
+    def url_(self):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
+
+    url_.short_description = 'url'
+    url_.allow_tags = True
+    url_.admin_order_field = 'url'

@@ -52,4 +52,6 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
-    pass
+    list_display = ['title', 'url_', 'price', 'date_added']
+    list_filter = ['date_added']
+    search_fields = ['title', 'manufacturer', 'mpn']

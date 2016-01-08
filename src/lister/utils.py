@@ -130,6 +130,7 @@ class Amazon(object):
             item_obj = AmazonItem(**result)
             if item_obj.is_valid():
                 item_obj.save()
+                logger.info('Saved amazon item: {}'.format(item_obj.title))
                 count += 1
         logger.info(
             'Saved {} amazon items for query {}'.format(
