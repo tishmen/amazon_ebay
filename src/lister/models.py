@@ -48,6 +48,7 @@ class AmazonItem(models.Model):
     review_count = models.PositiveIntegerField(
         verbose_name='number of reviews'
     )
+    note = models.TextField(null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):

@@ -5,6 +5,8 @@ import traceback
 import requests
 from amazon.api import AmazonAPI
 from bs4 import BeautifulSoup
+from io import BytesIO
+from PIL import Image
 
 from django.conf import settings
 from django.utils import timezone
@@ -57,11 +59,26 @@ class Amazon(object):
             logger.error(traceback.format_exc())
             return 0
 
+    def get_image_list(self, result):
+        image_list = []
+        for url in [str(image.LargeImage.URL) for image in result.images]:
+            response = requests.get(url)
+            image = Image.open(BytesIO(response.content))
+            height, width = image.size
+            if height >= 500 or width >= 500:
+                image_list.append(url)
+        logger.info(
+            'Got {} images for Amazon item {}'.format(
+                len(image_list), result.title
+            )
+        )
+        return image_list
+
     def parse_result(self, result, search_obj):
         url = '/'.join(result.offer_url.split('/')[:-1])
         title = result.title
         feature_list = result.features
-        image_list = [str(image.LargeImage.URL) for image in result.images]
+        image_list = self.get_image_list(result)
         price = result.price_and_currency[0] or result.list_price[0] or 0
         manufacturer = result.manufacturer
         mpn = result.mpn
