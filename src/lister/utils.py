@@ -1,11 +1,11 @@
 import re
 import logging
 import traceback
+from io import BytesIO
 
 import requests
 from amazon.api import AmazonAPI
 from bs4 import BeautifulSoup
-from io import BytesIO
 from PIL import Image
 
 from django.conf import settings
@@ -62,7 +62,7 @@ class Amazon(object):
     def get_image_list(self, result):
         image_list = []
         for url in [str(image.LargeImage.URL) for image in result.images]:
-            response = requests.get(url)
+            response = requests.get(url, headers={'Range': 'bytes=0-1000'})
             image = Image.open(BytesIO(response.content))
             height, width = image.size
             if height >= 500 or width >= 500:
