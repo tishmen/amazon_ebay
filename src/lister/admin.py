@@ -8,6 +8,7 @@ from django.db import models
 
 from .models import AmazonSearch, AmazonItem
 from .tasks import search_task
+from .forms import UpdateReviewerActionForm
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +51,13 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_filter = ['date_searched']
     search_fields = ['query']
     readonly_fields = ['query', 'date_searched']
-    actions = ['search']
     inlines = [AmazonItemInline]
+    actions = ['search']
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        qs = qs.annotate(models.Count('amazonitem'))
-        return qs
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(models.Count('amazonitem'))
+        return queryset
 
     def result_count(self, obj):
         return obj.amazonitem__count
@@ -77,7 +78,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
-    list_display = ['title', 'url_', 'price', 'date_added']
+    list_display = ['title', 'url_', 'price', 'reviewer', 'date_added']
     list_filter = ['date_added']
     search_fields = ['title', 'manufacturer', 'mpn']
     exclude = ['url', 'feature_list', 'image_list']
@@ -85,3 +86,16 @@ class AmazonItemAdmin(admin.ModelAdmin):
         'search', 'url_', 'title', 'feature_list_', 'image_list_', 'price',
         'manufacturer', 'mpn', 'review_count', 'date_added'
     ]
+    action_form = UpdateReviewerActionForm
+    actions = ['update_reviewer']
+
+    def update_reviewer(self, request, queryset):
+        count = queryset.count()
+        reviewer = request.POST['reviewer']
+        queryset.update(reviewer=reviewer)
+        message = 'Updating reviewer for {}'.format(
+            get_message_bit(count, 'item')
+        )
+        self.message_user(request, message, level=messages.SUCCESS)
+
+    update_reviewer.short_description = 'Update reviewers for selected items'

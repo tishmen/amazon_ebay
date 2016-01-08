@@ -6,8 +6,9 @@ from django.db import models
 
 logger = logging.getLogger(__name__)
 
-MIN_AMAZON_ITEM_PRICE = 35
 MIN_AMAZON_ITEM_IMAGE_COUNT = 2
+MIN_AMAZON_ITEM_PRICE = 35
+MAX_AMAZON_ITEM_PRICE = 1000
 MIN_AMAZON_ITEM_REVIEW_COUNT = 10
 MAX_AMAZON_ITEM_REVIEW_COUNT = 30
 
@@ -48,6 +49,12 @@ class AmazonItem(models.Model):
         if self.price < MIN_AMAZON_ITEM_PRICE:
             logger.info(
                 'Less than minimum amazon item price {} for item {} with price'
+                ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
+            )
+            return
+        if self.price < MAX_AMAZON_ITEM_PRICE:
+            logger.info(
+                'More than minimum amazon item price {} for item {} with price'
                 ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
             )
             return
