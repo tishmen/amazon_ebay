@@ -40,13 +40,11 @@ class AmazonItem(models.Model):
     url = models.URLField(unique=True)
     title = models.TextField()
     feature_list = ArrayField()
-    image_list = ArrayField(verbose_name='list of images')
+    image_list = ArrayField()
     price = models.FloatField()
     manufacturer = models.TextField(null=True)
     mpn = models.TextField(null=True)
-    review_count = models.PositiveIntegerField(
-        verbose_name='number of reviews'
-    )
+    review_count = models.PositiveIntegerField()
     date_added = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
@@ -86,9 +84,28 @@ class AmazonItem(models.Model):
     def __str__(self):
         return self.title
 
+    def feature_list_(self):
+        feature_list = ''
+        for feature in self.feature_list[1:-1].split(', '):
+            if feature:
+                feature_list += '{}\n'.format(feature[1:-1])
+        return feature_list.strip()
+
+    def image_list_(self):
+        image_list = ''
+        for image in self.image_list[1:-1].split(', '):
+            if image:
+                image_list += (
+                    '<a href="{0}" target="_blank">{0}</a><br>'.format(
+                        image[1:-1]
+                    )
+                )
+        return image_list[:-4]
+
     def url_(self):
         return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
 
+    image_list_.allow_tags = True
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'

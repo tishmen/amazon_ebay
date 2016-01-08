@@ -55,3 +55,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     list_display = ['title', 'url_', 'price', 'date_added']
     list_filter = ['date_added']
     search_fields = ['title', 'manufacturer', 'mpn']
+    exclude = ['url', 'feature_list', 'image_list']
+    readonly_fields = [
+        'search', 'url_', 'title', 'feature_list_', 'image_list_', 'price',
+        'manufacturer', 'mpn', 'review_count', 'date_added'
+    ]
