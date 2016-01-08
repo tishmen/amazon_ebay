@@ -40,7 +40,9 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     def search(self, request, queryset):
         count = queryset.count()
         search_task.delay(queryset)
-        message = 'Running search task for {}'.format(get_message_bit(count, 'query', 'queries'))
+        message = 'Running search task for {}'.format(
+            get_message_bit(count, 'query', 'queries')
+        )
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
 

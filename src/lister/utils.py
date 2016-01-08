@@ -41,12 +41,16 @@ class Amazon(object):
             count = soup.find(string=re.compile('[0-9,]+ customer reviews'))
             count = int(count.split()[0].replace(',', ''))
             logger.info(
-                'Review count for Amazon item {} from url {} is {}'.format(title, url, count)
+                'Review count for Amazon item {} from url {} is {}'.format(
+                    title, url, count
+                )
             )
             return count
         except AttributeError:
             logger.warning(
-                'Review count for Amazon item {} from url {} not found'.format(title, url)
+                'Review count for Amazon item {} from url {} not found'.format(
+                    title, url
+                )
             )
             return 0
         except:
@@ -81,11 +85,10 @@ class Amazon(object):
 
     def search(self, search_obj):
         try:
-            results = list(
-                reversed(
-                    list(self.connection.search(Keywords=search_obj.query, SearchIndex='All'))
-                )
+            results = self.connection.search(
+                Keywords=search_obj.query, SearchIndex='All'
             )
+            results = list(reversed(list(results)))
             logger.info(
                 'Got {} search results from Amazon API for query {}'.format(
                     len(results), search_obj.query
@@ -95,19 +98,27 @@ class Amazon(object):
             results = []
             logger.error(traceback.format_exc())
             logger.warning(
-                'Got 0 search results from Amazon API for query {}'.format(search_obj.query)
+                'Got 0 search results from Amazon API for query {}'.format(
+                    search_obj.query
+                )
             )
         count = 0
         for result in results:
             if count > MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
-                logger.info('Reached maximum Amazon item count per search limit')
+                logger.info(
+                    'Reached maximum Amazon item count per search limit'
+                )
                 break
             result = self.parse_result(result, search_obj)
             item_obj = AmazonItem(**result)
             if item_obj.is_valid():
                 item_obj.save()
                 count += 1
-        logger.info('Saved {} amazon items for query {}'.format(count, search_obj.query))
+        logger.info(
+            'Saved {} amazon items for query {}'.format(
+                count, search_obj.query
+            )
+        )
         search_obj.date_searched = timezone.now()
         search_obj.save()
         self.total_count += count

@@ -17,6 +17,8 @@ def search_task(self, queryset):
             return
         for search_obj in queryset:
             amazon.search(search_obj)
-        logger.info('Saved total of {} amazon items'.format(amazon.total_count))
+        logger.info(
+            'Saved total of {} amazon items'.format(amazon.total_count)
+        )
     except:
         logger.error(traceback.format_exc())
