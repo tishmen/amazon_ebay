@@ -5,8 +5,9 @@ from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
 from django.db import models
+from django.utils.safestring import mark_safe
 
-from .models import AmazonSearch, AmazonItem
+from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
 from .forms import CreateReviewActionForm
 
@@ -83,19 +84,53 @@ class AmazonItemAdmin(admin.ModelAdmin):
     search_fields = ['title', 'manufacturer', 'mpn']
     exclude = ['price', 'url', 'feature_list', 'image_list']
     readonly_fields = [
-        'search', 'reviewer', 'url_', 'title', 'feature_list_', 'image_list_',
+        'search', 'url_', 'image', 'title', 'feature_list_', 'image_list_',
         'price_', 'manufacturer', 'mpn', 'review_count', 'date_added'
+    ]
+    fieldsets = [
+        [
+            None,
+            {
+                'fields': [
+                    'url_', 'title', 'image', 'price_', 'review_count',
+                    ('feature_list_', 'image_list_'),
+                    ('manufacturer', 'mpn'), 'reviewer'
+                ]
+            }
+        ]
     ]
     action_form = CreateReviewActionForm
     actions = ['create_review']
+
+    def image(self, obj):
+        return mark_safe(obj.image())
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(AmazonItemAdmin, self).get_form(request, obj, **kwargs)
+        reviewer = form.base_fields['reviewer']
+        reviewer.widget.can_add_related = False
+        reviewer.widget.can_change_related = False
+        return form
 
     def create_review(self, request, queryset):
         count = queryset.count()
         reviewer = request.POST['reviewer']
         queryset.update(reviewer=reviewer)
+        for item in queryset:
+            try:
+                item.itemreview
+            except ItemReview.DoesNotExist:
+                review = ItemReview(item=item)
+                review.save()
         message = 'Creating review for {}'.format(
             get_message_bit(count, 'amazon item')
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
     create_review.short_description = 'Create review for selected amazon items'
+
+
+@admin.register(ItemReview)
+class ItemReviewAdmin(admin.ModelAdmin):
+
+    pass

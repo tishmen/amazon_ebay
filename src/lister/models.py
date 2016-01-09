@@ -40,8 +40,8 @@ class AmazonItem(models.Model):
     feature_list = models.TextField()
     image_list = models.TextField()
     price = models.FloatField()
-    manufacturer = models.TextField(null=True)
-    mpn = models.TextField(null=True)
+    manufacturer = models.TextField(null=True, blank=True)
+    mpn = models.TextField(null=True, blank=True)
     review_count = models.PositiveIntegerField()
     date_added = models.DateTimeField(auto_now_add=True)
 
@@ -89,6 +89,9 @@ class AmazonItem(models.Model):
     def __str__(self):
         return self.title
 
+    def image(self):
+        return '<img src="{}" />'.format(to_list(self.image_list)[0])
+
     def price_(self):
         return '${}'.format(self.price)
 
@@ -115,3 +118,17 @@ class AmazonItem(models.Model):
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
+
+
+class ItemReview(models.Model):
+
+    item = models.OneToOneField('AmazonItem')
+    title = models.CharField(max_length=80, null=True)
+    html = models.TextField(null=True)
+    category = models.IntegerField(null=True)
+    manufacturer = models.TextField(null=True)
+    mpn = models.TextField(null=True)
+    upc = models.CharField(max_length=12, null=True, blank=True)
+
+    def __str__(self):
+        return self.item.title
