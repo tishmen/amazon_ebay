@@ -89,6 +89,9 @@ class AmazonItem(models.Model):
     def __str__(self):
         return self.title
 
+    def price_(self):
+        return '${}'.format(self.price)
+
     def feature_list_(self):
         feature_list = ''
         for feature in to_list(self.feature_list):

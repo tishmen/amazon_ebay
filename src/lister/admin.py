@@ -8,7 +8,7 @@ from django.db import models
 
 from .models import AmazonSearch, AmazonItem
 from .tasks import search_task
-from .forms import UpdateReviewerActionForm
+from .forms import CreateReviewActionForm
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +34,10 @@ class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
     exclude = [
-        'url', 'feature_list', 'image_list', 'manufacturer', 'mpn',
-        'review_count'
+        'reviewer', 'url', 'feature_list', 'image_list', 'manufacturer', 'mpn',
+        'review_count', 'date_added', 'price'
     ]
-    readonly_fields = ['title', 'url_', 'price', 'date_added']
+    readonly_fields = ['title', 'url_', 'price_']
     extra = 0
     max_num = 0
     can_delete = False
@@ -78,24 +78,24 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
-    list_display = ['title', 'url_', 'price', 'reviewer', 'date_added']
-    list_filter = ['date_added']
+    list_display = ['title', 'url_', 'price_', 'reviewer', 'date_added']
+    list_filter = ['reviewer', 'date_added']
     search_fields = ['title', 'manufacturer', 'mpn']
-    exclude = ['url', 'feature_list', 'image_list']
+    exclude = ['price', 'url', 'feature_list', 'image_list']
     readonly_fields = [
-        'search', 'url_', 'title', 'feature_list_', 'image_list_', 'price',
-        'manufacturer', 'mpn', 'review_count', 'date_added'
+        'search', 'reviewer', 'url_', 'title', 'feature_list_', 'image_list_',
+        'price_', 'manufacturer', 'mpn', 'review_count', 'date_added'
     ]
-    action_form = UpdateReviewerActionForm
-    actions = ['update_reviewer']
+    action_form = CreateReviewActionForm
+    actions = ['create_review']
 
-    def update_reviewer(self, request, queryset):
+    def create_review(self, request, queryset):
         count = queryset.count()
         reviewer = request.POST['reviewer']
         queryset.update(reviewer=reviewer)
-        message = 'Updating reviewer for {}'.format(
-            get_message_bit(count, 'item')
+        message = 'Creating review for {}'.format(
+            get_message_bit(count, 'amazon item')
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    update_reviewer.short_description = 'Update reviewers for selected items'
+    create_review.short_description = 'Create review for selected amazon items'
