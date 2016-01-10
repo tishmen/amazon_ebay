@@ -14,5 +14,6 @@ class ChangeReviewerActionForm(ActionForm):
 
 class ItemReviewForm(forms.ModelForm):
 
-    model = ItemReview
-    fields = '__all__'
+    class Meta:
+        model = ItemReview
+        fields = '__all__'

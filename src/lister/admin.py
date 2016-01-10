@@ -1,6 +1,9 @@
 import copy
 import logging
 
+from djcelery.models import (
+    TaskState, WorkerState, PeriodicTask, IntervalSchedule, CrontabSchedule
+)
 from import_export import resources
 from import_export.admin import ImportMixin
 
@@ -12,6 +15,11 @@ from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
 from .forms import ChangeReviewerActionForm, ItemReviewForm
 
+admin.site.unregister(TaskState)
+admin.site.unregister(WorkerState)
+admin.site.unregister(IntervalSchedule)
+admin.site.unregister(CrontabSchedule)
+admin.site.unregister(PeriodicTask)
 logger = logging.getLogger(__name__)
 
 
@@ -97,8 +105,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     action_form = ChangeReviewerActionForm
     actions = ['change_reviewer']
     fields_ = [
-        'url_', 'title', 'image', 'price_', 'review_count',
-        ('feature_list_', 'image_list_'), ('manufacturer', 'mpn'), 'reviewer'
+        'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
+        ('manufacturer', 'mpn'), 'reviewer'
     ]
     fieldsets = [[None, {'fields': fields_}]]
 

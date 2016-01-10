@@ -126,9 +126,10 @@ class ItemReview(models.Model):
     title = models.CharField(max_length=80)
     html = models.TextField()
     category = models.IntegerField()
-    manufacturer = models.TextField()
-    mpn = models.TextField()
+    manufacturer = models.CharField(max_length=65)
+    mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.item.title
