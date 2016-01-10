@@ -1,3 +1,5 @@
+import inspect
+import itertools
 import copy
 import logging
 
@@ -11,15 +13,16 @@ from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
 
+from .forms import ChangeReviewerActionForm, ItemReviewForm
 from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
-from .forms import ChangeReviewerActionForm, ItemReviewForm
 
 admin.site.unregister(TaskState)
 admin.site.unregister(WorkerState)
 admin.site.unregister(IntervalSchedule)
 admin.site.unregister(CrontabSchedule)
 admin.site.unregister(PeriodicTask)
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,26 +46,40 @@ class AmazonSearchResource(resources.ModelResource):
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
-    exclude = [
-        'reviewer', 'url', 'feature_list', 'image_list', 'manufacturer', 'mpn',
-        'review_count', 'date_added', 'price'
-    ]
-    readonly_fields = ['title', 'url_', 'price_']
     extra = 0
     max_num = 0
     can_delete = False
+    fields_ = ['title', 'url_', 'price_']
+    fieldsets = [[None, {'fields': fields_}]]
+    readonly_fields = ['title', 'url_', 'price_']
 
 
 @admin.register(AmazonSearch)
 class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     resource_class = AmazonSearchResource
-    list_display = ['query', 'date_searched', 'result_count']
-    list_filter = ['date_searched']
     search_fields = ['query']
+    actions = ['search']
+    list_display = ['query', 'result_count']
+    fields_ = ['query', 'date_searched']
+    fieldsets = [[None, {'fields': fields_}]]
     readonly_fields = ['query', 'date_searched']
     inlines = [AmazonItemInline]
-    actions = ['search']
+
+    # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
+    # omit object name in TabularInline
+    def render_change_form(self, request, context, *args, **kwargs):
+        def get_queryset(original_func):
+            def wrapped_func():
+                if inspect.stack()[1][3] == '__iter__':
+                    return itertools.repeat(None)
+                return original_func()
+            return wrapped_func
+        for formset in context['inline_admin_formsets']:
+            formset.formset.get_queryset = get_queryset(
+                formset.formset.get_queryset
+            )
+        return super().render_change_form(request, context, *args, **kwargs)
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -98,15 +115,14 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     search_fields = ['title', 'manufacturer', 'mpn']
     readonly_fields = [
-        'search', 'url_', 'image', 'title', 'feature_list_', 'image_list_',
-        'price_', 'manufacturer', 'mpn', 'review_count', 'date_added'
+        'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
     ]
     inlines = [ItemReviewInline]
     action_form = ChangeReviewerActionForm
     actions = ['change_reviewer']
     fields_ = [
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
-        ('manufacturer', 'mpn'), 'reviewer'
+        'reviewer'
     ]
     fieldsets = [[None, {'fields': fields_}]]
 
@@ -114,7 +130,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
         list_display = ['title', 'url_', 'price_']
         if not request.user.is_superuser:
             return list_display
-        return list_display + ['reviewer', 'date_added']
+        return list_display + ['reviewer']
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = copy.deepcopy(super().get_fieldsets(request))
@@ -125,7 +141,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if not request.user.is_superuser:
             return
-        return ['reviewer', 'date_added']
+        return ['reviewer']
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
