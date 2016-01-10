@@ -5,16 +5,14 @@ from django.contrib.auth.models import User
 from .models import ItemReview
 
 
-class CreateReviewActionForm(ActionForm):
+class ChangeReviewerActionForm(ActionForm):
 
     reviewer = forms.ModelChoiceField(
         queryset=User.objects.all(), required=False
     )
 
 
-class ItemReviewAdmin(forms.ModelForm):
+class ItemReviewForm(forms.ModelForm):
 
-    class Meta:
-
-        model = ItemReview
-        fields = '__all__'
+    model = ItemReview
+    fields = '__all__'

@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from import_export import resources
@@ -9,7 +10,7 @@ from django.utils.safestring import mark_safe
 
 from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
-from .forms import CreateReviewActionForm
+from .forms import ChangeReviewerActionForm, ItemReviewForm
 
 logger = logging.getLogger(__name__)
 
@@ -60,77 +61,96 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         queryset = queryset.annotate(models.Count('amazonitem'))
         return queryset
 
-    def result_count(self, obj):
-        return obj.amazonitem__count
-
     def search(self, request, queryset):
         count = queryset.count()
         search_task.delay(queryset)
-        message = 'Running search task for {}'.format(
+        message = 'Delayed search task for {}'.format(
             get_message_bit(count, 'query', 'queries')
         )
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
 
+    def result_count(self, obj):
+        return obj.amazonitem__count
+
     result_count.admin_order_field = 'amazonitem__count'
-    search.short_description = 'Run search task for selected queries'
+    search.short_description = 'Delay search task for selected queries'
+
+
+class ItemReviewInline(admin.StackedInline):
+
+    model = ItemReview
+    form = ItemReviewForm
+    extra = 0
+    max_num = 1
 
 
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
-    list_display = ['title', 'url_', 'price_', 'reviewer', 'date_added']
-    list_filter = ['reviewer', 'date_added']
     search_fields = ['title', 'manufacturer', 'mpn']
-    exclude = ['price', 'url', 'feature_list', 'image_list']
     readonly_fields = [
         'search', 'url_', 'image', 'title', 'feature_list_', 'image_list_',
         'price_', 'manufacturer', 'mpn', 'review_count', 'date_added'
     ]
-    fieldsets = [
-        [
-            None,
-            {
-                'fields': [
-                    'url_', 'title', 'image', 'price_', 'review_count',
-                    ('feature_list_', 'image_list_'),
-                    ('manufacturer', 'mpn'), 'reviewer'
-                ]
-            }
-        ]
+    inlines = [ItemReviewInline]
+    action_form = ChangeReviewerActionForm
+    actions = ['change_reviewer']
+    fields_ = [
+        'url_', 'title', 'image', 'price_', 'review_count',
+        ('feature_list_', 'image_list_'), ('manufacturer', 'mpn'), 'reviewer'
     ]
-    action_form = CreateReviewActionForm
-    actions = ['create_review']
+    fieldsets = [[None, {'fields': fields_}]]
 
-    def image(self, obj):
-        return mark_safe(obj.image())
+    def get_list_display(self, request):
+        list_display = ['title', 'url_', 'price_']
+        if not request.user.is_superuser:
+            return list_display
+        return list_display + ['reviewer', 'date_added']
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = copy.deepcopy(super().get_fieldsets(request))
+        if not request.user.is_superuser:
+            fieldsets[0][1]['fields'].remove('reviewer')
+        return fieldsets
+
+    def get_list_filter(self, request):
+        if not request.user.is_superuser:
+            return
+        return ['reviewer', 'date_added']
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if not request.user.is_superuser:
+            return queryset.filter(reviewer=request.user)
+        return queryset
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            return
+        return actions
 
     def get_form(self, request, obj=None, **kwargs):
-        form = super(AmazonItemAdmin, self).get_form(request, obj, **kwargs)
+        form = super().get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            return form
         reviewer = form.base_fields['reviewer']
         reviewer.widget.can_add_related = False
         reviewer.widget.can_change_related = False
         return form
 
-    def create_review(self, request, queryset):
+    def change_reviewer(self, request, queryset):
         count = queryset.count()
         reviewer = request.POST['reviewer']
         queryset.update(reviewer=reviewer)
-        for item in queryset:
-            try:
-                item.itemreview
-            except ItemReview.DoesNotExist:
-                review = ItemReview(item=item)
-                review.save()
-        message = 'Creating review for {}'.format(
+        message = 'Changing reviewer for {}'.format(
             get_message_bit(count, 'amazon item')
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    create_review.short_description = 'Create review for selected amazon items'
+    def image(self, obj):
+        return mark_safe(obj.image())
 
-
-@admin.register(ItemReview)
-class ItemReviewAdmin(admin.ModelAdmin):
-
-    pass
+    change_reviewer.short_description = 'Change reviewer for selected amazon '\
+        'items'

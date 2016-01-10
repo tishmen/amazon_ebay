@@ -123,11 +123,11 @@ class AmazonItem(models.Model):
 class ItemReview(models.Model):
 
     item = models.OneToOneField('AmazonItem')
-    title = models.CharField(max_length=80, null=True)
-    html = models.TextField(null=True)
-    category = models.IntegerField(null=True)
-    manufacturer = models.TextField(null=True)
-    mpn = models.TextField(null=True)
+    title = models.CharField(max_length=80)
+    html = models.TextField()
+    category = models.IntegerField()
+    manufacturer = models.TextField()
+    mpn = models.TextField()
     upc = models.CharField(max_length=12, null=True, blank=True)
 
     def __str__(self):
