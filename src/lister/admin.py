@@ -49,9 +49,8 @@ class AmazonItemInline(admin.TabularInline):
     extra = 0
     max_num = 0
     can_delete = False
-    fields_ = ['title', 'url_', 'price_']
-    fieldsets = [[None, {'fields': fields_}]]
-    readonly_fields = ['title', 'url_', 'price_']
+    fieldsets = [[None, {'fields': ['title_', 'url_', 'price_']}]]
+    readonly_fields = ['title_', 'url_', 'price_']
 
 
 @admin.register(AmazonSearch)
@@ -60,11 +59,22 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     resource_class = AmazonSearchResource
     search_fields = ['query']
     actions = ['search']
-    list_display = ['query', 'result_count']
-    fields_ = ['query', 'date_searched']
-    fieldsets = [[None, {'fields': fields_}]]
-    readonly_fields = ['query', 'date_searched']
-    inlines = [AmazonItemInline]
+    list_filter = ['date_searched']
+    list_display = ['query', 'result_count', 'date_searched']
+
+    def add_view(self, request, form_url='', extra_context=None):
+        self.fieldsets = [[None, {'fields': ['query']}]]
+        self.readonly_fields = []
+        self.inlines = []
+        return super().add_view(request, form_url, extra_context)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        self.fieldsets = [[None, {'fields': ['query', 'date_searched']}]]
+        self.readonly_fields = ['query', 'date_searched']
+        obj = AmazonSearch.objects.get(id=object_id)
+        if obj.amazonitem_set.all():
+            self.inlines = [AmazonItemInline]
+        return super().change_view(request, object_id, form_url, extra_context)
 
     # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
     # omit object name in TabularInline
@@ -89,8 +99,8 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     def search(self, request, queryset):
         count = queryset.count()
         search_task.delay(queryset)
-        message = 'Delayed search task for {}'.format(
-            get_message_bit(count, 'query', 'queries')
+        message = 'Searching for {}'.format(
+            get_message_bit(count, 'amazon searches', 'amazon searches')
         )
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
@@ -99,7 +109,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         return obj.amazonitem__count
 
     result_count.admin_order_field = 'amazonitem__count'
-    search.short_description = 'Delay search task for selected queries'
+    search.short_description = 'Search for selected amazon searches'
 
 
 class ItemReviewInline(admin.StackedInline):
@@ -125,6 +135,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
         'reviewer'
     ]
     fieldsets = [[None, {'fields': fields_}]]
+
+    def has_add_permission(self, request):
+        return
 
     def get_list_display(self, request):
         list_display = ['title', 'url_', 'price_']

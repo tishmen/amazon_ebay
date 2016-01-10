@@ -89,11 +89,19 @@ class AmazonItem(models.Model):
     def __str__(self):
         return self.title
 
-    def image(self):
-        return '<img src="{}" />'.format(to_list(self.image_list)[0])
+    def url_(self):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
+
+    def title_(self):
+        return '<a href="/admin/lister/amazonitem/{}/change/">{}</a>'.format(
+            self.id, self.title
+        )
 
     def price_(self):
         return '${}'.format(self.price)
+
+    def image(self):
+        return '<img src="{}" />'.format(to_list(self.image_list)[0])
 
     def feature_list_(self):
         feature_list = ''
@@ -102,22 +110,10 @@ class AmazonItem(models.Model):
                 feature_list += '{}\n'.format(feature)
         return feature_list.strip()
 
-    def image_list_(self):
-        image_list = ''
-        for image in to_list(self.image_list):
-            if image:
-                image_list += (
-                    '<a href="{0}" target="_blank">{0}</a><br>'.format(image)
-                )
-        return image_list[:-4]
-
-    def url_(self):
-        return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
-
-    image_list_.allow_tags = True
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
+    title_.allow_tags = True
 
 
 class ItemReview(models.Model):
