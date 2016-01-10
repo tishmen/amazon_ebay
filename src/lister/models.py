@@ -110,6 +110,48 @@ class AmazonItem(models.Model):
                 feature_list += '{}\n'.format(feature)
         return feature_list.strip()
 
+    def html(self):
+        html = '<![CDATA[<div id="ds_div">'\
+            '<h1 class="p1" style="text-align: center;"><span class="s1"><str'\
+            'ong>{}</strong></span></h1>'\
+            '<h1 class="p2" style="text-align: center;"><span class="s1"><str'\
+            'ong>Product Description:</strong></span></h1>'\
+            '<p class="p2"><span class="s1"><strong>Features:</strong></span>'\
+            '</p><ul class="ul1">'.format(self.title)
+        for feature in to_list(self.feature_list):
+            html += '<li class="li3"><span class="s1">{}</span></li>'.format(
+                feature
+            )
+        html += '</ul><br></br><h2>Shipping / Return Policies (Balanced):</h2'\
+            '><h3>Shipping Policies:</h3>'\
+            '<ul><li>We ship to the Lower 48 States only (Does NOT include Ha'\
+            'waii or Alaska)</li><li>'\
+            'We cannot ship to PO Boxes/APO\'s</li><li>We cannot combine ship'\
+            'ping.</li><li>No Local Pickup.</li></ul>'\
+            '<p>All items will be shipped directly to you from our supplier w'\
+            'ithin 1-3 business days. Most items are delivered within 3-5 bus'\
+            'iness days, however, please allow 3-10 business days.</p>'\
+            '<p>All items are in stock when they are listed. Inventory is tra'\
+            'cked and updated regularly. However, if demand exceeds our suppl'\
+            'y, we will give the customer the following options: Full refund.'\
+            ' Have the item back ordered and shipped when it becomes availabl'\
+            'e. We will offer other items in similar style and quality. Your '\
+            'bid / purchase of the item implies you agree to this policy.</p>'\
+            '<p>If you have a question about a product not otherwise answered'\
+            ' in the item description, please contact us via eBay messages fi'\
+            'rst and allow us the opportunity to help you and be sure we have'\
+            ' what you\'re looking for.</p>'\
+            '<h3>Exchange/Return Policy:</h3>'\
+            '<p>Your satisfaction is guaranteed! If for any reason you are un'\
+            'happy with your item, just return it within 14 days for a full r'\
+            'efund, minus shipping cost. Please contact us prior to initiatin'\
+            'g a return so that we can issue you a refund authorization.</p>'\
+            '<h3>Payment Policy</h3>'\
+            '<p>We require Immediate Payment. Must be an authorized address.'\
+            '</p></div>'\
+            '<p>Thank you for viewing the {}</p>]]>'.format(self.title)
+        return html
+
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
@@ -125,6 +167,7 @@ class ItemReview(models.Model):
     manufacturer = models.CharField(max_length=65)
     mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
+    is_listed = models.BooleanField(default=False)
     note = models.TextField(null=True, blank=True)
 
     def __str__(self):

@@ -12,8 +12,11 @@ from import_export.admin import ImportMixin
 from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
+from django.utils.functional import curry
 
-from .forms import ChangeReviewerActionForm, ItemReviewForm
+from .forms import (
+    ChangeReviewerActionForm, ItemReviewInlineFormSet, ItemReviewInlineForm
+)
 from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
 
@@ -115,9 +118,23 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 class ItemReviewInline(admin.StackedInline):
 
     model = ItemReview
-    form = ItemReviewForm
+    formset = ItemReviewInlineFormSet
+    form = ItemReviewInlineForm
     extra = 0
     max_num = 1
+
+    def get_formset(self, request, obj=None, **kwargs):
+        initial = [
+            {
+                'title': obj.title,
+                'html': obj.html(),
+                'manufacturer': obj.manufacturer,
+                'mpn': obj.mpn
+            }
+        ]
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.__init__ = curry(formset.__init__, initial=initial)
+        return formset
 
 
 @admin.register(AmazonItem)
