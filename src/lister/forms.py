@@ -3,6 +3,8 @@ from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib.admin.helpers import ActionForm
 from django.contrib.auth.models import User
+from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from .models import ItemReview
 
@@ -14,28 +16,31 @@ class ChangeReviewerActionForm(ActionForm):
     )
 
 
+class CategorySearchWidget(forms.Widget):
+
+    template_name = 'category_search_widget.html'
+
+    def render(self, name, value, attrs=None):
+        return mark_safe(
+            render_to_string(self.template_name, {'options': None})
+        )
+
+
 class ItemReviewInlineForm(forms.ModelForm):
 
     html = forms.CharField(widget=CKEditorWidget())
-    search = forms.CharField(required=False)
+    category = forms.CharField(widget=CategorySearchWidget)
 
     def __init__(self, *args, **kwargs):
         super(ItemReviewInlineForm, self).__init__(*args, **kwargs)
-        print(kwargs)
         self.fields['title'].help_text = '{} characters'.format(
             len(kwargs.get('initial', {}).get('title', ''))
         )
-        obj = kwargs.get('initial', {}).get('obj')
-        if obj:
-            self.fields['category'] = forms.ChoiceField(
-                choices=obj.initial_categories()
-            )
 
     class Meta:
         model = ItemReview
         fields = [
-            'title', 'html', 'search', 'category', 'manufacturer',
-            'mpn', 'upc', 'note'
+            'title', 'html', 'category', 'manufacturer', 'mpn', 'upc', 'note'
         ]
 
 
