@@ -1,3 +1,5 @@
+from ckeditor.widgets import CKEditorWidget
+
 from django import forms
 from django.contrib.admin.helpers import ActionForm
 from django.contrib.auth.models import User
@@ -14,22 +16,34 @@ class ChangeReviewerActionForm(ActionForm):
 
 class ItemReviewInlineForm(forms.ModelForm):
 
+    html = forms.CharField(widget=CKEditorWidget())
+    search = forms.CharField(required=False)
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ItemReviewInlineForm, self).__init__(*args, **kwargs)
+        print(kwargs)
         self.fields['title'].help_text = '{} characters'.format(
             len(kwargs.get('initial', {}).get('title', ''))
         )
+        obj = kwargs.get('initial', {}).get('obj')
+        if obj:
+            self.fields['category'] = forms.ChoiceField(
+                choices=obj.initial_categories()
+            )
 
     class Meta:
         model = ItemReview
-        fields = '__all__'
+        fields = [
+            'title', 'html', 'search', 'category', 'manufacturer',
+            'mpn', 'upc', 'note'
+        ]
 
 
 class BaseItemReviewInlineFormSet(forms.BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
         self.__initial = kwargs.pop('initial', [])
-        super().__init__(*args, **kwargs)
+        super(BaseItemReviewInlineFormSet, self).__init__(*args, **kwargs)
 
     def total_form_count(self):
         return len(self.__initial) + self.extra

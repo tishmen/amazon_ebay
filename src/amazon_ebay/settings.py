@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'djcelery',
     'import_export',
+    'ckeditor',
     'lister',
 ]
 

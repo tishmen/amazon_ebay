@@ -7,6 +7,7 @@ from io import BytesIO
 import requests
 from amazon.api import AmazonAPI
 from bs4 import BeautifulSoup
+from ebaysdk.trading import Connection as Trading
 from PIL import Image
 
 from django.conf import settings
@@ -147,3 +148,47 @@ class Amazon(object):
             )
         )
         self.total_count += count
+
+
+class Ebay(object):
+
+    def __init__(self):
+        try:
+            self.production_connection = Trading(
+                devid=settings.EBAY_DEVID,
+                appid=settings.EBAY_PRODUCTION_APPID,
+                certid=settings.EBAY_PRODUCTION_CERTID,
+                token=settings.EBAY_PRODUCTION_TOKEN,
+                config_file=None
+            )
+            logger.info('Established Ebay Production API connection')
+            self.sandbox_connection = Trading(
+                domain='api.sandbox.ebay.com',
+                devid=settings.EBAY_DEVID,
+                appid=settings.EBAY_SANDBOX_APPID,
+                certid=settings.EBAY_SANDBOX_CERTID,
+                token=settings.EBAY_SANDBOX_TOKEN,
+                config_file=None
+            )
+            logger.info('Established Ebay Sandbox API connection')
+        except:
+            self.production_connection = None
+            self.sandbox_connection = None
+            logger.error(traceback.format_exc())
+            logger.error('Failed to establish Ebay API connection')
+
+    def category_search(self, query):
+        response = self.production_connection.execute(
+            'GetSuggestedCategories', {'Query': query}
+        )
+        response = response.dict()
+        logger.info(
+            'Got {} suggested categories for query {}'.format(
+                response['SuggestedCategoryArray']['SuggestedCategory'],
+                query
+            )
+        )
+        return [
+            (int(c['Category']['CategoryID']), c['Category']['CategoryName'])
+            for c in response['SuggestedCategoryArray']['SuggestedCategory']
+        ]

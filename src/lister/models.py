@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 import logging
 
@@ -111,11 +113,12 @@ class AmazonItem(models.Model):
         return feature_list.strip()
 
     def html(self):
-        html = '<![CDATA[<div id="ds_div">'\
+        html = '<div id="ds_div">'\
             '<h1 class="p1" style="text-align: center;"><span class="s1"><str'\
             'ong>{}</strong></span></h1>'\
             '<h1 class="p2" style="text-align: center;"><span class="s1"><str'\
             'ong>Product Description:</strong></span></h1>'\
+            '<h2><strong>&lt;INSERT DESCRIPTION HERE&gt;</strong></h2>'\
             '<p class="p2"><span class="s1"><strong>Features:</strong></span>'\
             '</p><ul class="ul1">'.format(self.title)
         for feature in to_list(self.feature_list):
@@ -149,8 +152,15 @@ class AmazonItem(models.Model):
             '<h3>Payment Policy</h3>'\
             '<p>We require Immediate Payment. Must be an authorized address.'\
             '</p></div>'\
-            '<p>Thank you for viewing the {}</p>]]>'.format(self.title)
+            '<p>Thank you for viewing the {}</p>'.format(self.title)
         return html
+
+    def initial_categories(self):
+        from .utils import Ebay
+        ebay = Ebay()
+        if not ebay.production_connection:
+            return []
+        return ebay.category_search(self.search.query)
 
     url_.short_description = 'url'
     url_.allow_tags = True

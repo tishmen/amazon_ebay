@@ -69,7 +69,9 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         self.fieldsets = [[None, {'fields': ['query']}]]
         self.readonly_fields = []
         self.inlines = []
-        return super().add_view(request, form_url, extra_context)
+        return super(AmazonSearchAdmin, self).add_view(
+            request, form_url, extra_context
+        )
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         self.fieldsets = [[None, {'fields': ['query', 'date_searched']}]]
@@ -77,7 +79,9 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         obj = AmazonSearch.objects.get(id=object_id)
         if obj.amazonitem_set.all():
             self.inlines = [AmazonItemInline]
-        return super().change_view(request, object_id, form_url, extra_context)
+        return super(AmazonSearchAdmin, self).change_view(
+            request, object_id, form_url, extra_context
+        )
 
     # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
     # omit object name in TabularInline
@@ -92,7 +96,9 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
             formset.formset.get_queryset = get_queryset(
                 formset.formset.get_queryset
             )
-        return super().render_change_form(request, context, *args, **kwargs)
+        return super(AmazonSearchAdmin, self).render_change_form(
+            request, context, *args, **kwargs
+        )
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -126,13 +132,16 @@ class ItemReviewInline(admin.StackedInline):
     def get_formset(self, request, obj=None, **kwargs):
         initial = [
             {
+                'obj': obj,
                 'title': obj.title,
                 'html': obj.html(),
                 'manufacturer': obj.manufacturer,
                 'mpn': obj.mpn
             }
         ]
-        formset = super().get_formset(request, obj, **kwargs)
+        formset = super(ItemReviewInline, self).get_formset(
+            request, obj, **kwargs
+        )
         formset.__init__ = curry(formset.__init__, initial=initial)
         return formset
 
@@ -163,7 +172,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
         return list_display + ['reviewer']
 
     def get_fieldsets(self, request, obj=None):
-        fieldsets = copy.deepcopy(super().get_fieldsets(request))
+        fieldsets = copy.deepcopy(
+            super(AmazonItemAdmin, self).get_fieldsets(request)
+        )
         if not request.user.is_superuser:
             fieldsets[0][1]['fields'].remove('reviewer')
         return fieldsets
@@ -174,19 +185,19 @@ class AmazonItemAdmin(admin.ModelAdmin):
         return ['reviewer']
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request)
+        queryset = super(AmazonItemAdmin, self).get_queryset(request)
         if not request.user.is_superuser:
             return queryset.filter(reviewer=request.user)
         return queryset
 
     def get_actions(self, request):
-        actions = super().get_actions(request)
+        actions = super(AmazonItemAdmin, self).get_actions(request)
         if not request.user.is_superuser:
             return
         return actions
 
     def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
+        form = super(AmazonItemAdmin, self).get_form(request, obj, **kwargs)
         if not request.user.is_superuser:
             return form
         reviewer = form.base_fields['reviewer']
