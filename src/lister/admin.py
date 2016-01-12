@@ -189,7 +189,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
             len(obj.title)
         )
         form.base_fields['html'].initial = obj.html()
-        form.base_fields['category_search'].initial = obj.search.query
+        form.base_fields['category_search'].widget.initial = obj.search.query
         form.base_fields['new_manufacturer'].initial = obj.manufacturer
         form.base_fields['new_mpn'].initial = obj.mpn
         return form
