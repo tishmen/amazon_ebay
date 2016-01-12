@@ -139,6 +139,10 @@ class AmazonItemAdmin(admin.ModelAdmin):
         ['Review', {'fields': review, 'classes': ['collapse']}],
     ]
 
+    class Media:
+
+        js = ['js/amazonitem_admin.js']
+
     def has_add_permission(self, request):
         return
 
@@ -180,6 +184,14 @@ class AmazonItemAdmin(admin.ModelAdmin):
         reviewer = form.base_fields['reviewer']
         reviewer.widget.can_add_related = False
         reviewer.widget.can_change_related = False
+        form.base_fields['new_title'].initial = obj.title
+        form.base_fields['new_title'].help_text = '{} characters'.format(
+            len(obj.title)
+        )
+        form.base_fields['html'].initial = obj.html()
+        form.base_fields['category_search'].initial = obj.search.query
+        form.base_fields['new_manufacturer'].initial = obj.manufacturer
+        form.base_fields['new_mpn'].initial = obj.mpn
         return form
 
     def change_reviewer(self, request, queryset):
