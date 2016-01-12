@@ -12,8 +12,8 @@ from import_export.admin import ImportMixin
 from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
-from .forms import ChangeReviewerActionForm
-from .models import AmazonSearch, AmazonItem
+from .forms import ChangeReviewerActionForm, AmazonItemForm
+from .models import AmazonSearch, AmazonItem, EbayItem
 from .tasks import search_task
 
 admin.site.unregister(TaskState)
@@ -79,8 +79,6 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
             request, object_id, form_url, extra_context
         )
 
-    # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
-    # omit object name in TabularInline
     def render_change_form(self, request, context, *args, **kwargs):
         def get_queryset(original_func):
             def wrapped_func():
@@ -127,20 +125,28 @@ class AmazonItemAdmin(admin.ModelAdmin):
     ]
     action_form = ChangeReviewerActionForm
     actions = ['change_reviewer']
-    fields_ = [
+    item = [
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
         'is_listed', 'reviewer'
     ]
-    fieldsets = [[None, {'fields': fields_}]]
+    review = [
+        'new_title', 'html', 'category_search', 'category_name', 'category_id',
+        'new_manufacturer', 'new_mpn', 'upc', 'note'
+    ]
+    form = AmazonItemForm
+    fieldsets = [
+        [None, {'fields': item}],
+        ['Review', {'fields': review, 'classes': ['collapse']}],
+    ]
 
     def has_add_permission(self, request):
         return
 
     def get_list_display(self, request):
-        list_display = ['title', 'url_', 'price_', 'is_listed', 'date_added']
+        list_display = ['title', 'url_', 'price_', 'is_listed']
         if not request.user.is_superuser:
-            return list_display
-        return list_display + ['reviewer']
+            return list_display + ['date_added']
+        return list_display + ['reviewer', 'date_added']
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = copy.deepcopy(
@@ -190,3 +196,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     change_reviewer.short_description = 'Change reviewer for selected amazon '\
         'items'
+
+
+@admin.register(EbayItem)
+class EbayItemAdmin(admin.ModelAdmin):
+
+    pass
