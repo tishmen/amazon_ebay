@@ -257,9 +257,9 @@ class Ebay(object):
             }
         }
         if settings.DEBUG:
-            connection = self.production_connection
-        else:
             connection = self.sandbox_connection
+        else:
+            connection = self.production_connection
         try:
             response = connection('AddFixedPriceItem', item_dict)
             logger.info('Listed ebay item {}'.format(title))
