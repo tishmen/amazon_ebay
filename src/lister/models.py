@@ -168,12 +168,22 @@ class ItemReview(models.Model):
     title = models.CharField(max_length=80)
     html = models.TextField()
     category_search = models.TextField()
-    category_id = models.IntegerField()
     category_name = models.TextField()
+    category_id = models.IntegerField()
     manufacturer = models.CharField(max_length=65)
     mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.item.title
+        return self.title
+
+
+class EbayItem(models.Model):
+
+    review = models.OneToOneField('ItemReview')
+    price = models.FloatField()
+    url = models.URLField(unique=True)
+
+    def __unicode__(self):
+        return self.review.title

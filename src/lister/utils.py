@@ -13,9 +13,10 @@ from PIL import Image
 from django.conf import settings
 from django.utils import timezone
 
-from .models import AmazonItem
+from .models import AmazonItem, EbayItem
 
 MAX_AMAZON_ITEM_COUNT_PER_SEARCH = 10
+EBAY_ITEM_PERCENTAGE_MARKUP = 1.5
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +180,7 @@ class Ebay(object):
             self.sandbox_connection = None
             logger.error(traceback.format_exc())
             logger.error('Failed to establish Ebay API connection')
+        self.total_count = 0
 
     def category_search(self, query):
         response = self.production_connection.execute(
@@ -195,3 +197,82 @@ class Ebay(object):
             (int(c['Category']['CategoryID']), c['Category']['CategoryName'])
             for c in response['SuggestedCategoryArray']['SuggestedCategory']
         ]
+
+    def list(self, amazon_item):
+        title = amazon_item.itemreview.title
+        html = amazon_item.itemreview.html
+        category_id = str(amazon_item.itemreview.category_id)
+        price = str(amazon_item.price * EBAY_ITEM_PERCENTAGE_MARKUP)
+        image_list = amazon_item.image_list
+        manufacturer = amazon_item.itemreview.manufacturer
+        mpn = amazon_item.itemreview.mpn
+        upc = amazon_item.itemreview.upc
+        item_dict = {
+            'Item': {
+                'Title': title,
+                'Description': html,
+                'PrimaryCategory': {'CategoryID': category_id},
+                'StartPrice': price,
+                'CategoryMappingAllowed': 'true',
+                'ConditionID': '1000',
+                'Country': 'US',
+                'Currency': 'USD',
+                'DispatchTimeMax': '3',
+                'ListingDuration': 'Days_30',
+                'ListingType': 'FixedPriceItem',
+                'Location': 'Los Angeles, CA',
+                'PaymentMethods': 'PayPal',
+                'PayPalEmailAddress': 'joshwardini@gmail.com',
+                'PictureDetails': {'PictureURL': image_list},
+                'ItemSpecifics': {
+                    'NameValueList': [
+                        {'Name': 'Brand', 'Value': manufacturer},
+                        {'Name': 'MPN', 'Value': mpn},
+                    ]
+                },
+                'ProductListingDetails': {
+                    'UPC': upc,
+                    'ListIfNoProduct': 'true',
+                },
+                'PostalCode': '90001',
+                'Quantity': '1',
+                'ShippingDetails': {
+                    'ShippingType': 'Flat',
+                    'ShippingServiceOptions': {
+                        'ShippingServicePriority': '1',
+                        'ShippingService': 'USPSMedia',
+                        'ShippingServiceCost': '0.00'
+                    }
+                },
+                'ReturnPolicy': {
+                    'Description': (
+                        '14 days money back, you pay return shipping'
+                    ),
+                    'ReturnsAcceptedOption': 'ReturnsAccepted',
+                    'RefundOption': 'MoneyBack',
+                    'ReturnsWithinOption': 'Days_14',
+                    'ShippingCostPaidByOption': 'Buyer'
+                },
+                'Site': 'US',
+            }
+        }
+        if settings.DEBUG:
+            connection = self.production_connection
+        else:
+            connection = self.sandbox_connection
+        try:
+            response = connection('AddFixedPriceItem', item_dict)
+            logger.info('Listed ebay item {}'.format(title))
+        except:
+            logger.info('Failed to list ebay item {}'.format(title))
+            return
+        url = 'http://www.ebay.com/itm/-/{}?ssPageName=ADME:L:LCA:US:112'\
+            '3'.format(response.dict()['ItemID'])
+        item = EbayItem(review=amazon_item.itemreview, price=price, url=url)
+        try:
+            item.save()
+            logger.info(u'Saved ebay item: {}'.format(item.title))
+            self.total_count += 1
+        except:
+            logger.error(traceback.format_exc())
+            logger.warning(u'Failed to save ebay item: {}'.format(item.title))
