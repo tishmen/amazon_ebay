@@ -12,11 +12,8 @@ from import_export.admin import ImportMixin
 from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
-from django.utils.functional import curry
-from .forms import (
-    ChangeReviewerActionForm, ItemReviewInlineFormSet, ItemReviewInlineForm
-)
-from .models import AmazonSearch, AmazonItem, ItemReview
+from .forms import ChangeReviewerActionForm
+from .models import AmazonSearch, AmazonItem
 from .tasks import search_task
 
 admin.site.unregister(TaskState)
@@ -120,48 +117,6 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     search.short_description = 'Search for selected amazon searches'
 
 
-class ItemReviewInline(admin.StackedInline):
-
-    model = ItemReview
-    formset = ItemReviewInlineFormSet
-    form = ItemReviewInlineForm
-    extra = 0
-    max_num = 1
-
-    def get_formset(self, request, obj=None, **kwargs):
-        formset = super(ItemReviewInline, self).get_formset(
-            request, obj, **kwargs
-        )
-        try:
-            initial = [
-                {
-                    'is_listed': obj.is_listed,
-                    'title': obj.itemreview.title,
-                    'html': obj.itemreview.html,
-                    'category_search': obj.itemreview.category_search,
-                    'category_id': obj.itemreview.category_id,
-                    'category_name': obj.itemreview.category_name,
-                    'manufacturer': obj.itemreview.manufacturer,
-                    'mpn': obj.itemreview.mpn,
-                    'upc': obj.itemreview.upc,
-                    'note': obj.itemreview.note,
-                }
-            ]
-        except ItemReview.DoesNotExist:
-            initial = [
-                {
-                    'is_listed': obj.is_listed,
-                    'title': obj.title,
-                    'category_search': obj.search.query,
-                    'html': obj.html(),
-                    'manufacturer': obj.manufacturer,
-                    'mpn': obj.mpn
-                }
-            ]
-        formset.__init__ = curry(formset.__init__, initial=initial)
-        return formset
-
-
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
@@ -170,7 +125,6 @@ class AmazonItemAdmin(admin.ModelAdmin):
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
         'is_listed'
     ]
-    inlines = [ItemReviewInline]
     action_form = ChangeReviewerActionForm
     actions = ['change_reviewer']
     fields_ = [

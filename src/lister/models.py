@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 MIN_AMAZON_ITEM_IMAGE_COUNT = 1
 MIN_AMAZON_ITEM_PRICE = 1
-MAX_AMAZON_ITEM_PRICE = 1000
 MIN_AMAZON_ITEM_REVIEW_COUNT = 1
+MAX_AMAZON_ITEM_PRICE = 1000
 MAX_AMAZON_ITEM_REVIEW_COUNT = 1000
 
 
@@ -49,6 +49,16 @@ class AmazonItem(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
+        image_list = to_list(self.image_list)
+        if len(image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
+            logger.info(
+                'Less than minimum item image count {} for item {} with image '
+                'count of {}'.format(
+                    MIN_AMAZON_ITEM_IMAGE_COUNT, self.title,
+                    len(image_list)
+                )
+            )
+            return
         if self.price < MIN_AMAZON_ITEM_PRICE:
             logger.info(
                 'Less than minimum amazon item price {} for item {} with price'
@@ -59,16 +69,6 @@ class AmazonItem(models.Model):
             logger.info(
                 'More than minimum amazon item price {} for item {} with price'
                 ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
-            )
-            return
-        image_list = to_list(self.image_list)
-        if len(image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
-            logger.info(
-                'Less than minimum item image count {} for item {} with image '
-                'count of {}'.format(
-                    MIN_AMAZON_ITEM_IMAGE_COUNT, self.title,
-                    len(image_list)
-                )
             )
             return
         if self.review_count < MIN_AMAZON_ITEM_REVIEW_COUNT:
