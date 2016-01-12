@@ -8,11 +8,11 @@ from django.db import models
 
 logger = logging.getLogger(__name__)
 
-MIN_AMAZON_ITEM_IMAGE_COUNT = 2
-MIN_AMAZON_ITEM_PRICE = 35
+MIN_AMAZON_ITEM_IMAGE_COUNT = 1
+MIN_AMAZON_ITEM_PRICE = 1
 MAX_AMAZON_ITEM_PRICE = 1000
-MIN_AMAZON_ITEM_REVIEW_COUNT = 10
-MAX_AMAZON_ITEM_REVIEW_COUNT = 30
+MIN_AMAZON_ITEM_REVIEW_COUNT = 1
+MAX_AMAZON_ITEM_REVIEW_COUNT = 1000
 
 
 def to_list(value):
@@ -21,14 +21,14 @@ def to_list(value):
 
 class AmazonSearch(models.Model):
 
-    query = models.CharField(max_length=100)
+    query = models.TextField()
     date_searched = models.DateTimeField(null=True, blank=True)
 
     class Meta:
 
         verbose_name_plural = 'amazon searches'
 
-    def __str__(self):
+    def __unicode__(self):
         return self.query
 
 
@@ -45,6 +45,7 @@ class AmazonItem(models.Model):
     manufacturer = models.TextField(null=True, blank=True)
     mpn = models.TextField(null=True, blank=True)
     review_count = models.PositiveIntegerField()
+    is_listed = models.BooleanField(default=False)
     date_added = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
@@ -54,7 +55,7 @@ class AmazonItem(models.Model):
                 ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
             )
             return
-        if self.price < MAX_AMAZON_ITEM_PRICE:
+        if self.price > MAX_AMAZON_ITEM_PRICE:
             logger.info(
                 'More than minimum amazon item price {} for item {} with price'
                 ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
@@ -88,7 +89,7 @@ class AmazonItem(models.Model):
             return
         return True
 
-    def __str__(self):
+    def __unicode__(self):
         return self.title
 
     def url_(self):
@@ -166,12 +167,13 @@ class ItemReview(models.Model):
     item = models.OneToOneField('AmazonItem')
     title = models.CharField(max_length=80)
     html = models.TextField()
-    category = models.IntegerField()
+    category_search = models.TextField()
+    category_id = models.IntegerField()
+    category_name = models.TextField()
     manufacturer = models.CharField(max_length=65)
     mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
-    is_listed = models.BooleanField(default=False)
     note = models.TextField(null=True, blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.item.title

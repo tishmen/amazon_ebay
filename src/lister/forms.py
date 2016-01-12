@@ -20,28 +20,45 @@ class CategorySearchWidget(forms.Widget):
 
     template_name = 'category_search_widget.html'
 
+    class Media:
+        js = ['js/category_search_widget.js']
+
     def render(self, name, value, attrs=None):
+        context = {'category_search': self.category_search}
         return mark_safe(
-            render_to_string(self.template_name, {'options': None})
+            render_to_string(self.template_name, context)
         )
 
 
 class ItemReviewInlineForm(forms.ModelForm):
 
     html = forms.CharField(widget=CKEditorWidget())
-    category = forms.CharField(widget=CategorySearchWidget)
-
-    def __init__(self, *args, **kwargs):
-        super(ItemReviewInlineForm, self).__init__(*args, **kwargs)
-        self.fields['title'].help_text = '{} characters'.format(
-            len(kwargs.get('initial', {}).get('title', ''))
-        )
+    category_search = forms.CharField(widget=CategorySearchWidget)
+    category_id = forms.ChoiceField(label='Category')
+    category_name = forms.CharField()
 
     class Meta:
         model = ItemReview
-        fields = [
-            'title', 'html', 'category', 'manufacturer', 'mpn', 'upc', 'note'
-        ]
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(ItemReviewInlineForm, self).__init__(*args, **kwargs)
+        if kwargs.get('initial', {}).get('readonly'):
+            self.fields['category_search'].widget = forms.HiddenInput()
+            self.fields['category_id'].widget = forms.HiddenInput()
+            for _, value in self.fields.items():
+                value.widget.attrs['readonly'] = True
+        else:
+            self.fields['category_name'].widget = forms.HiddenInput()
+            self.fields['category_search'].widget.category_search = (
+                kwargs.get('initial', {}).get('category_search', '')
+            )
+            self.fields['category_id'].choices = [
+                (
+                    kwargs.get('initial', {}).get('category_id', ''),
+                    kwargs.get('initial', {}).get('category_name', '')
+                )
+            ]
 
 
 class BaseItemReviewInlineFormSet(forms.BaseInlineFormSet):

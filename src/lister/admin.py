@@ -11,7 +11,6 @@ from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
 from django.db import models
-from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 from django.utils.functional import curry
 from .forms import (
@@ -19,7 +18,6 @@ from .forms import (
 )
 from .models import AmazonSearch, AmazonItem, ItemReview
 from .tasks import search_task
-from .utils import Ebay
 
 admin.site.unregister(TaskState)
 admin.site.unregister(WorkerState)
@@ -37,13 +35,6 @@ def get_message_bit(count, obj_name, obj_name_multiple=None):
         if not obj_name_multiple:
             obj_name_multiple = obj_name + 's'
         return '{} {}'.format(count, obj_name_multiple)
-
-
-def category_search(query):
-    ebay = Ebay()
-    if not ebay.production_connection:
-        return []
-    return ebay.category_search(query)
 
 
 class AmazonSearchResource(resources.ModelResource):
@@ -138,18 +129,35 @@ class ItemReviewInline(admin.StackedInline):
     max_num = 1
 
     def get_formset(self, request, obj=None, **kwargs):
-        initial = [
-            {
-                'obj': obj,
-                'title': obj.title,
-                'html': obj.html(),
-                'manufacturer': obj.manufacturer,
-                'mpn': obj.mpn
-            }
-        ]
         formset = super(ItemReviewInline, self).get_formset(
             request, obj, **kwargs
         )
+        try:
+            initial = [
+                {
+                    'is_listed': obj.is_listed,
+                    'title': obj.itemreview.title,
+                    'html': obj.itemreview.html,
+                    'category_search': obj.itemreview.category_search,
+                    'category_id': obj.itemreview.category_id,
+                    'category_name': obj.itemreview.category_name,
+                    'manufacturer': obj.itemreview.manufacturer,
+                    'mpn': obj.itemreview.mpn,
+                    'upc': obj.itemreview.upc,
+                    'note': obj.itemreview.note,
+                }
+            ]
+        except ItemReview.DoesNotExist:
+            initial = [
+                {
+                    'is_listed': obj.is_listed,
+                    'title': obj.title,
+                    'category_search': obj.search.query,
+                    'html': obj.html(),
+                    'manufacturer': obj.manufacturer,
+                    'mpn': obj.mpn
+                }
+            ]
         formset.__init__ = curry(formset.__init__, initial=initial)
         return formset
 
@@ -160,36 +168,22 @@ class AmazonItemAdmin(admin.ModelAdmin):
     search_fields = ['title', 'manufacturer', 'mpn']
     readonly_fields = [
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
+        'is_listed'
     ]
     inlines = [ItemReviewInline]
     action_form = ChangeReviewerActionForm
     actions = ['change_reviewer']
     fields_ = [
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
-        'reviewer'
+        'is_listed', 'reviewer'
     ]
     fieldsets = [[None, {'fields': fields_}]]
-
-    def change_view(self, request, object_id, form_url='', extra_context=None):
-        query = request.GET.get('q')
-        print(query)
-        if query:
-            response = ''
-            for category in category_search(query):
-                response += '<option value="{}">{}</option>\n'.format(
-                    *category
-                )
-            return HttpResponse(response)
-        print(request.GET)
-        return super(AmazonItemAdmin, self).change_view(
-            request, object_id, form_url, extra_context
-        )
 
     def has_add_permission(self, request):
         return
 
     def get_list_display(self, request):
-        list_display = ['title', 'url_', 'price_']
+        list_display = ['title', 'url_', 'price_', 'is_listed', 'date_added']
         if not request.user.is_superuser:
             return list_display
         return list_display + ['reviewer']

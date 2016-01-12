@@ -45,16 +45,15 @@ class Amazon(object):
             count = soup.find(string=re.compile('[0-9,]+ customer reviews'))
             count = int(count.split()[0].replace(',', ''))
             logger.info(
-                'Review count for Amazon item {} from url {} is {}'.format(
+                u'Review count for Amazon item {} from url {} is {}'.format(
                     title, url, count
                 )
             )
             return count
         except AttributeError:
             logger.warning(
-                'Review count for Amazon item {} from url {} not found'.format(
-                    title, url
-                )
+                u'Review count for Amazon item {} from url {} not foun'
+                'd'.format(title, url)
             )
             return 0
         except:
@@ -70,7 +69,7 @@ class Amazon(object):
             if height >= 500 or width >= 500:
                 image_list.append(url)
         logger.info(
-            'Got {} images for Amazon item {}'.format(
+            u'Got {} images for Amazon item {}'.format(
                 len(image_list), result.title
             )
         )
@@ -98,7 +97,7 @@ class Amazon(object):
         }
         message = 'Parsed Amazon item:\n'
         for key, value in item.items():
-            message += '{}: {}\n'.format(key.upper(), value)
+            message += u'{}: {}\n'.format(key.upper(), value)
         logger.info(message.strip())
         return item
 
@@ -109,7 +108,7 @@ class Amazon(object):
             )
             results = list(reversed(list(results)))
             logger.info(
-                'Got {} search results from Amazon API for query {}'.format(
+                u'Got {} search results from Amazon API for query {}'.format(
                     len(results), search_obj.query
                 )
             )
@@ -117,7 +116,7 @@ class Amazon(object):
             results = []
             logger.error(traceback.format_exc())
             logger.warning(
-                'Got 0 search results from Amazon API for query {}'.format(
+                u'Got 0 search results from Amazon API for query {}'.format(
                     search_obj.query
                 )
             )
@@ -135,15 +134,19 @@ class Amazon(object):
             if item_obj.is_valid():
                 try:
                     item_obj.save()
-                    logger.info('Saved amazon item: {}'.format(item_obj.title))
+                    logger.info(
+                        u'Saved amazon item: {}'.format(item_obj.title)
+                    )
                     count += 1
                 except:
                     logger.error(traceback.format_exc())
                     logger.warning(
-                        'Failed to save amazon item: {}'.format(item_obj.title)
+                        u'Failed to save amazon item: {}'.format(
+                            item_obj.title
+                        )
                     )
         logger.info(
-            'Saved {} amazon items for query {}'.format(
+            u'Saved {} amazon items for query {}'.format(
                 count, search_obj.query
             )
         )
