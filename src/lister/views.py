@@ -4,10 +4,9 @@ from .utils import Ebay
 
 
 def category_search_view(request, query=None):
-    print(query)
     ebay = Ebay()
     if not (query and ebay.production_connection):
-        return HttpResponse()
+        return
     options = ''
     for category_id, category_name in ebay.category_search(query):
         options += '<option value="{}">{}</option>\n'.format(

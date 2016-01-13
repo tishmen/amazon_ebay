@@ -164,7 +164,7 @@ class AmazonItem(models.Model):
 
 class ItemReview(models.Model):
 
-    item = models.ForeignKey('AmazonItem')
+    item = models.ForeignKey('AmazonItem', unique=True)
     title = models.CharField(max_length=80)
     html = models.TextField()
     category_search = models.TextField()
@@ -177,3 +177,10 @@ class ItemReview(models.Model):
 
     def __str__(self):
         return self.item.title
+
+
+class EbayItem(models.Model):
+
+    review = models.OneToOneField('ItemReview')
+    price = models.FloatField()
+    date_listed = models.DateTimeField(auto_now_add=True)

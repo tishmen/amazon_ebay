@@ -195,3 +195,9 @@ class Ebay(object):
             (int(c['Category']['CategoryID']), c['Category']['CategoryName'])
             for c in response['SuggestedCategoryArray']['SuggestedCategory']
         ]
+
+    def list(self, amazon_item):
+        try:
+            review = amazon_item.itemreview_set.all()[0]
+        except IndexError:
+            return

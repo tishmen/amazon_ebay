@@ -14,7 +14,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.functional import curry
 from .forms import ReviewerForm, ItemReviewForm, ItemReviewFormSet
-from .models import AmazonSearch, AmazonItem, ItemReview
+from .models import AmazonSearch, AmazonItem, ItemReview, EbayItem
 from .tasks import search_task
 
 admin.site.unregister(TaskState)
@@ -237,3 +237,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     change_reviewer.short_description = 'Change reviewer for selected amazon '\
         'items'
+
+
+@admin.register(EbayItem)
+class EbayItemAdmin(admin.ModelAdmin):
+
+    pass
