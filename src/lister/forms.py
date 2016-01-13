@@ -19,7 +19,7 @@ class ItemReviewForm(forms.ModelForm):
     title = forms.CharField(max_length=80, widget=forms.Textarea)
     html = forms.CharField(widget=CKEditorWidget())
     category_search = forms.CharField(widget=forms.TextInput)
-    category_id = forms.IntegerField(widget=forms.Select)
+    category_id = forms.IntegerField(label='Category', widget=forms.Select)
     category_name = forms.CharField(widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
