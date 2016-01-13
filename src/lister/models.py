@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 MIN_AMAZON_ITEM_IMAGE_COUNT = 1
 MIN_AMAZON_ITEM_PRICE = 1
-MIN_AMAZON_ITEM_REVIEW_COUNT = 1
 MAX_AMAZON_ITEM_PRICE = 1000
+MIN_AMAZON_ITEM_REVIEW_COUNT = 1
 MAX_AMAZON_ITEM_REVIEW_COUNT = 1000
 
 
@@ -21,14 +21,14 @@ def to_list(value):
 
 class AmazonSearch(models.Model):
 
-    query = models.TextField()
+    query = models.CharField(max_length=100)
     date_searched = models.DateTimeField(null=True, blank=True)
 
     class Meta:
 
         verbose_name_plural = 'amazon searches'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.query
 
 
@@ -45,8 +45,8 @@ class AmazonItem(models.Model):
     manufacturer = models.TextField(null=True, blank=True)
     mpn = models.TextField(null=True, blank=True)
     review_count = models.PositiveIntegerField()
-    is_listed = models.BooleanField(default=False)
     date_added = models.DateTimeField(auto_now_add=True)
+    is_listed = models.BooleanField(default=False)
 
     def is_valid(self):
         image_list = to_list(self.image_list)
@@ -89,7 +89,7 @@ class AmazonItem(models.Model):
             return
         return True
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def url_(self):
@@ -164,7 +164,7 @@ class AmazonItem(models.Model):
 
 class ItemReview(models.Model):
 
-    item = models.OneToOneField('AmazonItem')
+    item = models.ForeignKey('AmazonItem')
     title = models.CharField(max_length=80)
     html = models.TextField()
     category_search = models.TextField()
@@ -175,15 +175,5 @@ class ItemReview(models.Model):
     upc = models.CharField(max_length=12, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
 
-    def __unicode__(self):
-        return self.title
-
-
-class EbayItem(models.Model):
-
-    review = models.OneToOneField('ItemReview')
-    price = models.FloatField()
-    url = models.URLField(unique=True)
-
-    def __unicode__(self):
-        return self.review.title
+    def __str__(self):
+        return self.item.title
