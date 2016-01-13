@@ -180,8 +180,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     actions = ['change_reviewer']
 
     class Media:
-
-        js = ['amazon_item_admin.js']
+        css = {'all': ['css/amazonitem_admin.css']}
+        js = ['js/amazonitem_admin.js']
 
     def has_add_permission(self, request):
         return

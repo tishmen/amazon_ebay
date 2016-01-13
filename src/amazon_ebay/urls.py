@@ -16,8 +16,12 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
+from lister.views import category_search_view
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^search/', category_search_view),
+    url(r'^search/(?P<query>.*)/', category_search_view),
 ]
 
 admin.site.site_header = 'Amazon to Ebay'
