@@ -24,6 +24,9 @@ class ItemReviewForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ItemReviewForm, self).__init__(*args, **kwargs)
+        self.fields['category_search'].help_text = 'Amazon search: {}'.format(
+            kwargs.get('initial', {}).get('item_search', '')
+        )
         self.fields['title'].help_text = '{} characters'.format(
             len(kwargs.get('initial', {}).get('title', ''))
         )
@@ -35,9 +38,10 @@ class ItemReviewForm(forms.ModelForm):
             )
         if kwargs.get('initial', {}).get('is_listed'):
             for _, field in self.fields.items():
-                    field.widget.attrs['readonly'] = "readonly"
+                field.widget.attrs['readonly'] = "readonly"
 
     class Meta:
+
         model = ItemReview
         fields = [
             'title', 'html', 'category_search', 'category_id', 'category_name',

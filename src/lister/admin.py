@@ -138,6 +138,7 @@ class ItemReviewInline(admin.StackedInline):
                     'is_listed': obj.is_listed,
                     'title': review.title,
                     'html': review.html,
+                    'item_search': obj.search.query,
                     'category_search': review.category_search,
                     'category_id': review.category_id,
                     'category_name': review.category_name,
@@ -153,6 +154,7 @@ class ItemReviewInline(admin.StackedInline):
                     'is_listed': obj.is_listed,
                     'title': obj.title,
                     'html': obj.html(),
+                    'item_search': obj.search.query,
                     'category_search': obj.search.query,
                     'manufacturer': obj.manufacturer,
                     'mpn': obj.mpn
