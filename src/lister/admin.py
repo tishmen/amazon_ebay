@@ -12,7 +12,7 @@ from import_export.admin import ImportMixin
 from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
-from django.utils.functional import curry
+
 from .forms import ReviewerForm, ItemReviewForm, ItemReviewFormSet
 from .models import AmazonSearch, AmazonItem, ItemReview, EbayItem
 from .tasks import search_task
@@ -38,7 +38,6 @@ def get_message_bit(count, obj_name, obj_name_multiple=None):
 class AmazonSearchResource(resources.ModelResource):
 
     class Meta:
-
         model = AmazonSearch
         exclude = ['date_searched']
 
@@ -46,11 +45,20 @@ class AmazonSearchResource(resources.ModelResource):
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
+    readonly_fields = ['title_', 'url_', 'price_']
+    fieldsets = [[None, {'fields': readonly_fields}]]
+    can_delete = False
     extra = 0
     max_num = 0
-    can_delete = False
-    fieldsets = [[None, {'fields': ['title_', 'url_', 'price_']}]]
-    readonly_fields = ['title_', 'url_', 'price_']
+
+
+class ItemReviewInline(admin.StackedInline):
+
+    model = ItemReview
+    formset = ItemReviewFormSet
+    form = ItemReviewForm
+    extra = 0
+    max_num = 1
 
 
 @admin.register(AmazonSearch)
@@ -71,17 +79,14 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         )
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
-        self.fieldsets = [[None, {'fields': ['query', 'date_searched']}]]
         self.readonly_fields = ['query', 'date_searched']
-        obj = AmazonSearch.objects.get(id=object_id)
-        if obj.amazonitem_set.all():
+        self.fieldsets = [[None, {'fields': self.readonly_fields}]]
+        if AmazonSearch.objects.get(id=object_id).amazonitem_set.all():
             self.inlines = [AmazonItemInline]
         return super(AmazonSearchAdmin, self).change_view(
             request, object_id, form_url, extra_context
         )
 
-    # http://stackoverflow.com/questions/5086537/how-to-omit-object-name-from-djangos-tabularinline-admin-view
-    # omit object name in TabularInline
     def render_change_form(self, request, context, *args, **kwargs):
         def get_queryset(original_func):
             def wrapped_func():
@@ -119,51 +124,6 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     search.short_description = 'Search for selected amazon searches'
 
 
-class ItemReviewInline(admin.StackedInline):
-
-    model = ItemReview
-    formset = ItemReviewFormSet
-    form = ItemReviewForm
-    extra = 0
-    max_num = 1
-
-    def get_formset(self, request, obj=None, **kwargs):
-        formset = super(ItemReviewInline, self).get_formset(
-            request, obj, **kwargs
-        )
-        try:
-            review = obj.itemreview_set.all()[0]
-            initial = [
-                {
-                    'is_listed': obj.is_listed,
-                    'title': review.title,
-                    'html': review.html,
-                    'item_search': obj.search.query,
-                    'category_search': review.category_search,
-                    'category_id': review.category_id,
-                    'category_name': review.category_name,
-                    'manufacturer': review.manufacturer,
-                    'mpn': review.mpn,
-                    'upc': review.upc,
-                    'note': review.note
-                }
-            ]
-        except IndexError:
-            initial = [
-                {
-                    'is_listed': obj.is_listed,
-                    'title': obj.title,
-                    'html': obj.html(),
-                    'item_search': obj.search.query,
-                    'category_search': obj.search.query,
-                    'manufacturer': obj.manufacturer,
-                    'mpn': obj.mpn
-                }
-            ]
-        formset.__init__ = curry(formset.__init__, initial=initial)
-        return formset
-
-
 @admin.register(AmazonItem)
 class AmazonItemAdmin(admin.ModelAdmin):
 
@@ -172,11 +132,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
         'is_listed'
     ]
-    item_fields = [
-        'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
-        'is_listed', 'reviewer'
-    ]
-    fieldsets = [[None, {'fields': item_fields}]]
+    fieldsets = [[None, {'fields': readonly_fields + ['reviewer']}]]
     inlines = [ItemReviewInline]
     action_form = ReviewerForm
     actions = ['change_reviewer']
@@ -234,6 +190,13 @@ class AmazonItemAdmin(admin.ModelAdmin):
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
+    def list(self, request, queryset):
+        queryset = queryset.filter(is_listed__isnull=1)
+        message = 'Changing reviewer for {}'.format(
+            get_message_bit(queryset.count(), 'amazon item')
+        )
+        self.message_user(request, message, level=messages.SUCCESS)
+
     def image(self, obj):
         return mark_safe(obj.image())
 
@@ -244,4 +207,5 @@ class AmazonItemAdmin(admin.ModelAdmin):
 @admin.register(EbayItem)
 class EbayItemAdmin(admin.ModelAdmin):
 
-    pass
+    def has_add_permission(self, request):
+        return

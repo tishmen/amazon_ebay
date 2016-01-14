@@ -22,54 +22,38 @@ class ItemReviewForm(forms.ModelForm):
     category_id = forms.IntegerField(label='Category', widget=forms.Select)
     category_name = forms.CharField(widget=forms.HiddenInput)
 
+    def set_readonly(self, *args, **kwargs):
+        for _, field in self.fields.items():
+            field.widget.attrs['readonly'] = "readonly"
+
     def __init__(self, *args, **kwargs):
         super(ItemReviewForm, self).__init__(*args, **kwargs)
-        self.fields['category_search'].help_text = 'Amazon search: {}'.format(
-            kwargs.get('initial', {}).get('item_search', '')
-        )
-        self.fields['title'].help_text = '{} characters'.format(
-            len(kwargs.get('initial', {}).get('title', ''))
-        )
-        category_id = kwargs.get('initial', {}).get('category_id')
-        category_name = kwargs.get('initial', {}).get('category_name')
-        if category_id and category_name:
-            self.fields['category_id'] = forms.IntegerField(
-                widget=forms.Select(choices=[(category_id, category_name)])
-            )
-        if kwargs.get('initial', {}).get('is_listed'):
-            for _, field in self.fields.items():
-                field.widget.attrs['readonly'] = "readonly"
+        if kwargs.get('initial', {}).get('readonly'):
+            self.set_readonly(*args, **kwargs)
 
     class Meta:
 
         model = ItemReview
-        fields = [
-            'title', 'html', 'category_search', 'category_id', 'category_name',
-            'manufacturer', 'mpn', 'upc', 'note'
-        ]
+        fields = '__all__'
 
 
-class BaseItemReviewFormSet(forms.BaseInlineFormSet):
+class ItemReviewFormSet(forms.BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
-        self.__initial = kwargs.pop('initial', [])
-        super(BaseItemReviewFormSet, self).__init__(*args, **kwargs)
-
-    def total_form_count(self):
-        return len(self.__initial) + self.extra
-
-    def _construct_forms(self):
-        return forms.BaseFormSet._construct_forms(self)
-
-    def _construct_form(self, i, **kwargs):
-        if self.__initial:
-            try:
-                kwargs['initial'] = self.__initial[i]
-            except IndexError:
-                pass
-        return forms.BaseFormSet._construct_form(self, i, **kwargs)
-
-
-ItemReviewFormSet = forms.formset_factory(
-    ItemReviewForm, formset=BaseItemReviewFormSet
-)
+        super(ItemReviewFormSet, self).__init__(*args, **kwargs)
+        initial = []
+        try:
+            kwargs['instance'].itemreview_set.all()[0]
+            initial.append({'readonly': kwargs['instance'].is_listed})
+        except IndexError:
+            initial.append(
+                {
+                    'title': kwargs['instance'].title,
+                    'html': kwargs['instance'].html(),
+                    'category_search': kwargs['instance'].search.query,
+                    'manufacturer': kwargs['instance'].manufacturer,
+                    'mpn': kwargs['instance'].mpn
+                }
+            )
+        self.initial = initial
+        self.extra += len(initial)
