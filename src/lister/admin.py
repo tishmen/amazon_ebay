@@ -1,5 +1,3 @@
-import inspect
-import itertools
 import copy
 import logging
 
@@ -19,13 +17,13 @@ from .forms import (
 from .models import AmazonSearch, AmazonItem, EbayItem
 from .tasks import search_task, list_task
 
+logger = logging.getLogger(__name__)
+
 admin.site.unregister(TaskState)
 admin.site.unregister(WorkerState)
 admin.site.unregister(IntervalSchedule)
 admin.site.unregister(CrontabSchedule)
 admin.site.unregister(PeriodicTask)
-
-logger = logging.getLogger(__name__)
 
 
 def get_message_bit(count, obj_name, obj_name_multiple=None):
