@@ -52,6 +52,27 @@ class AmazonItem(models.Model):
     review_count = models.PositiveIntegerField()
     date_added = models.DateTimeField(auto_now_add=True)
 
+    def url_(self):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
+
+    def title_(self):
+        return '<a href="/admin/lister/amazonitem/{}/change/">{}</a>'.format(
+            self.id, self.title
+        )
+
+    def price_(self):
+        return '${}'.format(self.price)
+
+    def image(self):
+        return '<img src="{}" />'.format(to_list(self.image_list)[0])
+
+    def feature_list_(self):
+        feature_list = ''
+        for feature in to_list(self.feature_list):
+            if feature:
+                feature_list += '{}\n'.format(feature)
+        return feature_list.strip()
+
     def is_valid(self):
         image_list = to_list(self.image_list)
         if len(image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
@@ -93,35 +114,8 @@ class AmazonItem(models.Model):
             return
         return True
 
-    def __str__(self):
-        return self.title
-
-    def __unicode__(self):
-        return self.title
-
-    def url_(self):
-        return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
-
-    def title_(self):
-        return '<a href="/admin/lister/amazonitem/{}/change/">{}</a>'.format(
-            self.id, self.title
-        )
-
-    def price_(self):
-        return '${}'.format(self.price)
-
     def price_after_markup(self):
         return math.ceil(self.price * EBAY_ITEM_PERCENTAGE_MARKUP)
-
-    def image(self):
-        return '<img src="{}" />'.format(to_list(self.image_list)[0])
-
-    def feature_list_(self):
-        feature_list = ''
-        for feature in to_list(self.feature_list):
-            if feature:
-                feature_list += '{}\n'.format(feature)
-        return feature_list.strip()
 
     def html(self):
         html = '<div id="ds_div">'\
@@ -166,6 +160,12 @@ class AmazonItem(models.Model):
             '<p>Thank you for viewing the {}</p>'.format(self.title)
         return html
 
+    def __str__(self):
+        return self.title
+
+    def __unicode__(self):
+        return self.title
+
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
@@ -176,6 +176,7 @@ class EbayItem(models.Model):
 
     item = models.ForeignKey('AmazonItem', unique=True)
     title = models.CharField(max_length=80)
+    url = models.URLField(unique=True, null=True, blank=True)
     price = models.FloatField()
     html = models.TextField()
     category_search = models.TextField()
@@ -193,3 +194,19 @@ class EbayItem(models.Model):
 
     def __unicode__(self):
         return self.title
+
+    def url_(self):
+        if self.url:
+            return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
+        else:
+            return
+
+    def price_(self):
+        return '${}'.format(self.price)
+
+    def image(self):
+        return self.item.image()
+
+    url_.short_description = 'url'
+    url_.allow_tags = True
+    url_.admin_order_field = 'url'

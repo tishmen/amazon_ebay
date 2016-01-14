@@ -13,7 +13,9 @@ from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
 
-from .forms import ReviewerForm, EbayItemForm, EbayItemFormSet
+from .forms import (
+    ReviewerForm, EbayItemInlineForm, EbayItemInlineFormSet, EbayItemForm
+)
 from .models import AmazonSearch, AmazonItem, EbayItem
 from .tasks import search_task, list_task
 
@@ -55,8 +57,8 @@ class AmazonItemInline(admin.TabularInline):
 class EbayItemInline(admin.StackedInline):
 
     model = EbayItem
-    formset = EbayItemFormSet
-    form = EbayItemForm
+    formset = EbayItemInlineFormSet
+    form = EbayItemInlineForm
     readonly_fields = ['is_listed']
     exclude = ['date_listed']
     extra = 0
@@ -214,5 +216,26 @@ class AmazonItemAdmin(admin.ModelAdmin):
 @admin.register(EbayItem)
 class EbayItemAdmin(admin.ModelAdmin):
 
+    search_fields = ['title', 'manufacturer', 'mpn']
+    list_display = ['title', 'url_', 'price_', 'date_listed']
+    readonly_fields = [
+        'url', 'title', 'image', 'price_', 'category_name', 'manufacturer',
+        'mpn', 'upc'
+    ]
+    fieldsets = [
+        [
+            None,
+            {'fields': readonly_fields[:3] + ['html'] + readonly_fields[4:]}
+        ]
+    ]
+    form = EbayItemForm
+
     def has_add_permission(self, request):
         return
+
+    def get_queryset(self, request):
+        queryset = super(EbayItemAdmin, self).get_queryset(request)
+        return queryset.filter(is_listed__isnull=1)
+
+    def image(self, obj):
+        return mark_safe(obj.image())

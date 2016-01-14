@@ -16,6 +16,19 @@ class ReviewerForm(ActionForm):
 
 class EbayItemForm(forms.ModelForm):
 
+    html = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = EbayItem
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(EbayItemForm, self).__init__(*args, **kwargs)
+        self.fields['html'].widget.attrs['readonly'] = "readonly"
+
+
+class EbayItemInlineForm(forms.ModelForm):
+
     title = forms.CharField(max_length=80, widget=forms.Textarea)
     html = forms.CharField(widget=CKEditorWidget())
     category_search = forms.CharField(widget=forms.TextInput)
@@ -27,20 +40,19 @@ class EbayItemForm(forms.ModelForm):
             field.widget.attrs['readonly'] = "readonly"
 
     def __init__(self, *args, **kwargs):
-        super(EbayItemForm, self).__init__(*args, **kwargs)
+        super(EbayItemInlineForm, self).__init__(*args, **kwargs)
         if kwargs.get('initial', {}).get('readonly'):
             self.set_readonly(*args, **kwargs)
 
     class Meta:
-
         model = EbayItem
         fields = '__all__'
 
 
-class EbayItemFormSet(forms.BaseInlineFormSet):
+class EbayItemInlineFormSet(forms.BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
-        super(EbayItemFormSet, self).__init__(*args, **kwargs)
+        super(EbayItemInlineFormSet, self).__init__(*args, **kwargs)
         try:
             item = kwargs['instance'].ebayitem_set.all()[0]
             self.initial = [{'readonly': item.is_listed}]
