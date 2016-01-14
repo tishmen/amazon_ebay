@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.admin.helpers import ActionForm
 from django.contrib.auth.models import User
 
-from .models import ItemReview
+from .models import EbayItem
 
 
 class ReviewerForm(ActionForm):
@@ -14,7 +14,7 @@ class ReviewerForm(ActionForm):
     )
 
 
-class ItemReviewForm(forms.ModelForm):
+class EbayItemForm(forms.ModelForm):
 
     title = forms.CharField(max_length=80, widget=forms.Textarea)
     html = forms.CharField(widget=CKEditorWidget())
@@ -27,33 +27,32 @@ class ItemReviewForm(forms.ModelForm):
             field.widget.attrs['readonly'] = "readonly"
 
     def __init__(self, *args, **kwargs):
-        super(ItemReviewForm, self).__init__(*args, **kwargs)
+        super(EbayItemForm, self).__init__(*args, **kwargs)
         if kwargs.get('initial', {}).get('readonly'):
             self.set_readonly(*args, **kwargs)
 
     class Meta:
 
-        model = ItemReview
+        model = EbayItem
         fields = '__all__'
 
 
-class ItemReviewFormSet(forms.BaseInlineFormSet):
+class EbayItemFormSet(forms.BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
-        super(ItemReviewFormSet, self).__init__(*args, **kwargs)
-        initial = []
+        super(EbayItemFormSet, self).__init__(*args, **kwargs)
         try:
-            kwargs['instance'].itemreview_set.all()[0]
-            initial.append({'readonly': kwargs['instance'].is_listed})
+            item = kwargs['instance'].ebayitem_set.all()[0]
+            self.initial = [{'readonly': item.is_listed}]
         except IndexError:
-            initial.append(
+            self.initial = [
                 {
                     'title': kwargs['instance'].title,
+                    'price': kwargs['instance'].price_after_markup(),
                     'html': kwargs['instance'].html(),
                     'category_search': kwargs['instance'].search.query,
                     'manufacturer': kwargs['instance'].manufacturer,
                     'mpn': kwargs['instance'].mpn
                 }
-            )
-        self.initial = initial
-        self.extra += len(initial)
+            ]
+        self.extra += len(self.initial)

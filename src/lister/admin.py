@@ -13,9 +13,9 @@ from django.contrib import admin, messages
 from django.db import models
 from django.utils.safestring import mark_safe
 
-from .forms import ReviewerForm, ItemReviewForm, ItemReviewFormSet
-from .models import AmazonSearch, AmazonItem, ItemReview, EbayItem
-from .tasks import search_task
+from .forms import ReviewerForm, EbayItemForm, EbayItemFormSet
+from .models import AmazonSearch, AmazonItem, EbayItem
+from .tasks import search_task, list_task
 
 admin.site.unregister(TaskState)
 admin.site.unregister(WorkerState)
@@ -52,11 +52,13 @@ class AmazonItemInline(admin.TabularInline):
     max_num = 0
 
 
-class ItemReviewInline(admin.StackedInline):
+class EbayItemInline(admin.StackedInline):
 
-    model = ItemReview
-    formset = ItemReviewFormSet
-    form = ItemReviewForm
+    model = EbayItem
+    formset = EbayItemFormSet
+    form = EbayItemForm
+    readonly_fields = ['is_listed']
+    exclude = ['date_listed']
     extra = 0
     max_num = 1
 
@@ -130,12 +132,11 @@ class AmazonItemAdmin(admin.ModelAdmin):
     search_fields = ['title', 'manufacturer', 'mpn']
     readonly_fields = [
         'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
-        'is_listed'
     ]
     fieldsets = [[None, {'fields': readonly_fields + ['reviewer']}]]
-    inlines = [ItemReviewInline]
+    inlines = [EbayItemInline]
     action_form = ReviewerForm
-    actions = ['change_reviewer']
+    actions = ['list', 'change_reviewer']
 
     class Media:
         css = {'all': ['css/amazonitem_admin.css']}
@@ -147,8 +148,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_display(self, request):
         list_display = ['title', 'url_', 'price_']
         if not request.user.is_superuser:
-            return list_display + ['is_listed', 'date_added']
-        return list_display + ['reviewer', 'is_listed', 'date_added']
+            return list_display + ['is_listed_', 'date_added']
+        return list_display + ['reviewer', 'is_listed_', 'date_added']
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = copy.deepcopy(
@@ -161,7 +162,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if not request.user.is_superuser:
             return
-        return ['is_listed', 'reviewer', 'date_added']
+        return ['reviewer', 'date_added']
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
@@ -183,6 +184,20 @@ class AmazonItemAdmin(admin.ModelAdmin):
         form.base_fields['reviewer'].widget.can_change_related = False
         return form
 
+    def image(self, obj):
+        return mark_safe(obj.image())
+
+    def is_listed_(self, obj):
+        return bool(obj.ebayitem_set.filter(is_listed__isnull=1))
+
+    def list(self, request, queryset):
+        queryset = queryset.filter(ebayitem__is_listed__isnull=1)
+        list_task.delay(queryset)
+        message = 'Listing {}'.format(
+            get_message_bit(queryset.count(), 'Amazon item') + ' on Ebay'
+        )
+        self.message_user(request, message, level=messages.SUCCESS)
+
     def change_reviewer(self, request, queryset):
         queryset.update(reviewer=request.POST.get('reviewer'))
         message = 'Changing reviewer for {}'.format(
@@ -190,16 +205,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    def list(self, request, queryset):
-        queryset = queryset.filter(is_listed__isnull=1)
-        message = 'Changing reviewer for {}'.format(
-            get_message_bit(queryset.count(), 'amazon item')
-        )
-        self.message_user(request, message, level=messages.SUCCESS)
-
-    def image(self, obj):
-        return mark_safe(obj.image())
-
+    is_listed_.boolean = True
+    list.short_description = 'List selected amazon items on ebay'
     change_reviewer.short_description = 'Change reviewer for selected amazon '\
         'items'
 

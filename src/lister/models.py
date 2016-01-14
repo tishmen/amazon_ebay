@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import logging
+import math
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -13,6 +14,7 @@ MIN_AMAZON_ITEM_PRICE = 1
 MAX_AMAZON_ITEM_PRICE = 1000
 MIN_AMAZON_ITEM_REVIEW_COUNT = 1
 MAX_AMAZON_ITEM_REVIEW_COUNT = 1000
+EBAY_ITEM_PERCENTAGE_MARKUP = 1.5
 
 
 def to_list(value):
@@ -31,6 +33,9 @@ class AmazonSearch(models.Model):
     def __str__(self):
         return self.query
 
+    def __unicode__(self):
+        return self.query
+
 
 class AmazonItem(models.Model):
 
@@ -46,7 +51,6 @@ class AmazonItem(models.Model):
     mpn = models.TextField(null=True, blank=True)
     review_count = models.PositiveIntegerField()
     date_added = models.DateTimeField(auto_now_add=True)
-    is_listed = models.BooleanField(default=False)
 
     def is_valid(self):
         image_list = to_list(self.image_list)
@@ -92,6 +96,9 @@ class AmazonItem(models.Model):
     def __str__(self):
         return self.title
 
+    def __unicode__(self):
+        return self.title
+
     def url_(self):
         return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
 
@@ -102,6 +109,9 @@ class AmazonItem(models.Model):
 
     def price_(self):
         return '${}'.format(self.price)
+
+    def price_after_markup(self):
+        return math.ceil(self.price * EBAY_ITEM_PERCENTAGE_MARKUP)
 
     def image(self):
         return '<img src="{}" />'.format(to_list(self.image_list)[0])
@@ -162,10 +172,11 @@ class AmazonItem(models.Model):
     title_.allow_tags = True
 
 
-class ItemReview(models.Model):
+class EbayItem(models.Model):
 
     item = models.ForeignKey('AmazonItem', unique=True)
     title = models.CharField(max_length=80)
+    price = models.FloatField()
     html = models.TextField()
     category_search = models.TextField()
     category_id = models.IntegerField()
@@ -174,13 +185,11 @@ class ItemReview(models.Model):
     mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
+    is_listed = models.BooleanField(default=False)
+    date_listed = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return self.item.title
+        return self.title
 
-
-class EbayItem(models.Model):
-
-    review = models.OneToOneField('ItemReview')
-    price = models.FloatField()
-    date_listed = models.DateTimeField(auto_now_add=True)
+    def __unicode__(self):
+        return self.title
