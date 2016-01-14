@@ -61,6 +61,7 @@ class EbayItemInline(admin.StackedInline):
     form = EbayItemInlineForm
     readonly_fields = ['is_listed']
     exclude = ['url', 'date_listed']
+    can_delete = False
     extra = 0
     max_num = 1
 
@@ -76,8 +77,8 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     def add_view(self, request, form_url='', extra_context=None):
         self.fieldsets = [[None, {'fields': ['query']}]]
-        self.readonly_fields = None
-        self.inlines = None
+        self.readonly_fields = []
+        self.inlines = []
         return super(AmazonSearchAdmin, self).add_view(
             request, form_url, extra_context
         )
@@ -89,21 +90,6 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
             self.inlines = [AmazonItemInline]
         return super(AmazonSearchAdmin, self).change_view(
             request, object_id, form_url, extra_context
-        )
-
-    def render_change_form(self, request, context, *args, **kwargs):
-        def get_queryset(original_func):
-            def wrapped_func():
-                if inspect.stack()[1][3] == '__iter__':
-                    return itertools.repeat(None)
-                return original_func()
-            return wrapped_func
-        for formset in context['inline_admin_formsets']:
-            formset.formset.get_queryset = get_queryset(
-                formset.formset.get_queryset
-            )
-        return super(AmazonSearchAdmin, self).render_change_form(
-            request, context, *args, **kwargs
         )
 
     def get_queryset(self, request):
