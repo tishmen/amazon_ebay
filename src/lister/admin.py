@@ -233,9 +233,9 @@ class EbayItemAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return
 
-    def get_queryset(self, request):
-        queryset = super(EbayItemAdmin, self).get_queryset(request)
-        return queryset.filter(is_listed__isnull=1)
+    # def get_queryset(self, request):
+    #     queryset = super(EbayItemAdmin, self).get_queryset(request)
+    #     return queryset.filter(is_listed__isnull=1)
 
     def image(self, obj):
         return mark_safe(obj.image())

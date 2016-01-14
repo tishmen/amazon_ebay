@@ -170,6 +170,9 @@ class AmazonItem(models.Model):
     url_.allow_tags = True
     url_.admin_order_field = 'url'
     title_.allow_tags = True
+    price_.short_description = 'price'
+    price_.allow_tags = True
+    price_.admin_order_field = 'price'
 
 
 class EbayItem(models.Model):
@@ -210,3 +213,6 @@ class EbayItem(models.Model):
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
+    price_.short_description = 'price'
+    price_.allow_tags = True
+    price_.admin_order_field = 'price'
