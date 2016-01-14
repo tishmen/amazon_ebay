@@ -206,9 +206,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
 class EbayItemAdmin(admin.ModelAdmin):
 
     search_fields = ['title', 'manufacturer', 'mpn']
-    list_display = ['title', 'url_', 'price_', 'date_listed']
+    list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
     readonly_fields = [
-        'url', 'title', 'image', 'price_', 'category_name', 'manufacturer',
+        'url_', 'title', 'image', 'price_', 'category_name', 'manufacturer',
         'mpn', 'upc'
     ]
     fieldsets = [
