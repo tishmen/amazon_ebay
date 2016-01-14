@@ -179,6 +179,7 @@ class Ebay(object):
             self.sandbox_connection = None
             logger.error(traceback.format_exc())
             logger.error('Failed to establish Ebay API connection')
+        self.total_count = 0
 
     def category_search(self, query):
         response = self.production_connection.execute(
@@ -195,3 +196,75 @@ class Ebay(object):
             (int(c['Category']['CategoryID']), c['Category']['CategoryName'])
             for c in response['SuggestedCategoryArray']['SuggestedCategory']
         ]
+
+    def list(self, item_obj):
+        if settings.DEBUG:
+            connection = self.sandbox_connection
+            url = 'http://www.ebay.com/itm/-/{}?ssPageName=ADME:L:LCA:US:1123'
+        else:
+            connection = self.produiction_connection
+            url = 'http://cgi.sandbox.ebay.com/ws/eBayISAPI.dll?ViewItem&item'\
+                '={}&ssPageName=STRK:MESELX:IT'
+        item_dict = {
+            'Item': {
+                'Title': item_obj.title,
+                'Description': item_obj.html,
+                'PrimaryCategory': {'CategoryID': item_obj.category_id},
+                'StartPrice': item_obj.price,
+                'CategoryMappingAllowed': 'true',
+                'ConditionID': '1000',
+                'Country': 'US',
+                'Currency': 'USD',
+                'DispatchTimeMax': '3',
+                'ListingDuration': 'Days_30',
+                'ListingType': 'FixedPriceItem',
+                'Location': 'Los Angeles, CA',
+                'PaymentMethods': 'PayPal',
+                'PayPalEmailAddress': 'joshwardini@gmail.com',
+                'PictureDetails': {
+                    'PictureURL': item_obj.image_list(),
+                },
+                'NameValueList': [
+                    {'Name': 'Brand', 'Value': item_obj.manufacturer},
+                    {'Name': 'MPN', 'Value': item_obj.model},
+                ],
+                'ProductListingDetails': {
+                    'UPC': item_obj.upc,
+                    'ListIfNoProduct': 'true',
+                },
+                'PostalCode': '90001',
+                'Quantity': '1',
+                'ShippingDetails': {
+                    'ShippingType': 'Flat',
+                    'ShippingServiceOptions': {
+                        'ShippingServicePriority': '1',
+                        'ShippingService': 'USPSMedia',
+                        'ShippingServiceCost': '0.00'
+                    }
+                },
+                'ReturnPolicy': {
+                    'Description': '14 days money back, you pay return shippin'
+                    'g',
+                    'ReturnsAcceptedOption': 'ReturnsAccepted',
+                    'RefundOption': 'MoneyBack',
+                    'ReturnsWithinOption': 'Days_14',
+                    'ShippingCostPaidByOption': 'Buyer'
+                },
+                'Site': 'US',
+            }
+        }
+        try:
+            response = connection.execute('AddFixedPriceItem', item_dict)
+            logger.info(u'Listed Ebay item {}'.format(item_obj.title))
+            item_obj.url = url.format(response.dict()['ItemID'])
+            item_obj.is_listed = True
+            try:
+                item_obj.save()
+                logger.info(u'Saved Ebay item {}'.format(item_obj.title))
+                self.total_count += 1
+            except:
+                logger.info(
+                    u'Failed to save Ebay item {}'.format(item_obj.title)
+                )
+        except:
+            logger.info(u'Failed to list Ebay item {}'.format(item_obj.title))

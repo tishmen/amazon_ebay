@@ -18,7 +18,7 @@ def search_task(self, queryset):
         for search_obj in queryset:
             amazon.search(search_obj)
         logger.info(
-            'Saved total of {} amazon items'.format(amazon.total_count)
+            'Saved total of {} Amazon items'.format(amazon.total_count)
         )
     except:
         logger.error(traceback.format_exc())
@@ -32,9 +32,7 @@ def list_task(self, queryset):
         if not (ebay.sandbox_connection or ebay.production_connection):
             return
         for item_obj in queryset:
-            ebay.search(item_obj)
-        logger.info(
-            'Listed total of {} amazon items'.format(ebay.total_count)
-        )
+            ebay.list(item_obj)
+        logger.info('Listed total of {} Ebay items'.format(ebay.total_count))
     except:
         logger.error(traceback.format_exc())

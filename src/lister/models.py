@@ -210,6 +210,9 @@ class EbayItem(models.Model):
     def image(self):
         return self.item.image()
 
+    def image_list(self):
+        return to_list(self.item.image_list)[0]
+
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
