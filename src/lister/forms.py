@@ -64,7 +64,10 @@ class EbayItemInlineFormSet(forms.BaseInlineFormSet):
                     'html': kwargs['instance'].html(),
                     'category_search': kwargs['instance'].search.query,
                     'manufacturer': kwargs['instance'].manufacturer,
-                    'mpn': kwargs['instance'].mpn
+                    'mpn': (
+                        kwargs['instance'].mpn or
+                        kwargs['instance'].manufacturer
+                    )
                 }
             ]
         self.extra += len(self.initial)

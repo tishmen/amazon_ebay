@@ -204,11 +204,11 @@ class EbayItem(models.Model):
         else:
             return
 
-    def amazon_url(self):
-        return '<a href="{0}" target="_blank">{0}</a>'.format(self.item.url)
-
     def ebay_url(self):
         return self.url_()
+
+    def amazon_url(self):
+        return '<a href="{0}" target="_blank">{0}</a>'.format(self.item.url)
 
     def price_(self):
         return '${}'.format(self.price)
@@ -222,11 +222,11 @@ class EbayItem(models.Model):
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
+    ebay_url.short_description = 'ebay url'
+    ebay_url.allow_tags = True
     amazon_url.short_description = 'amazon url'
     amazon_url.allow_tags = True
     amazon_url.admin_order_field = 'item__url'
-    ebay_url.short_description = 'ebay url'
-    ebay_url.allow_tags = True
     price_.short_description = 'price'
     price_.allow_tags = True
     price_.admin_order_field = 'price'

@@ -1,14 +1,10 @@
 import copy
 import logging
 
-from djcelery.models import (
-    TaskState, WorkerState, PeriodicTask, IntervalSchedule, CrontabSchedule
-)
 from import_export import resources
 from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
-from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.safestring import mark_safe
 
@@ -19,13 +15,6 @@ from .models import AmazonSearch, AmazonItem, EbayItem
 from .tasks import search_task, list_task
 
 logger = logging.getLogger(__name__)
-
-admin.site.unregister(Group)
-admin.site.unregister(TaskState)
-admin.site.unregister(WorkerState)
-admin.site.unregister(IntervalSchedule)
-admin.site.unregister(CrontabSchedule)
-admin.site.unregister(PeriodicTask)
 
 
 def get_message_bit(count, obj_name, obj_name_multiple=None):

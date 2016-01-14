@@ -64,7 +64,7 @@ class Amazon(object):
             response = requests.get(url)
             image = Image.open(BytesIO(response.content))
             height, width = image.size
-            if height >= 500 or width >= 500:
+            if height >= 500 and width >= 500:
                 image_list.append(url)
         logger.info(
             u'Got {} images for Amazon item {}'.format(
