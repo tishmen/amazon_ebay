@@ -8,6 +8,7 @@ from import_export import resources
 from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
+from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.safestring import mark_safe
 
@@ -19,6 +20,7 @@ from .tasks import search_task, list_task
 
 logger = logging.getLogger(__name__)
 
+admin.site.unregister(Group)
 admin.site.unregister(TaskState)
 admin.site.unregister(WorkerState)
 admin.site.unregister(IntervalSchedule)
