@@ -44,6 +44,24 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
+class IsListedFilter(admin.SimpleListFilter):
+
+    title = 'is listed'
+    parameter_name = 'is_listed'
+
+    def lookups(self, request, model_admin):
+        return [('1', 'Yes'), ('0', 'No')]
+
+    def queryset(self, request, queryset):
+        lookup_value = self.value()
+        if lookup_value:
+            if lookup_value == '1':
+                queryset = queryset.filter(ebayitem__is_listed=True)
+            elif lookup_value == '0':
+                queryset = queryset.filter(ebayitem__is_listed=None)
+        return queryset
+
+
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
@@ -59,8 +77,7 @@ class EbayItemInline(admin.StackedInline):
     model = EbayItem
     formset = EbayItemInlineFormSet
     form = EbayItemInlineForm
-    readonly_fields = ['is_listed']
-    exclude = ['url', 'date_listed']
+    exclude = ['url', 'is_listed', 'date_listed']
     can_delete = False
     extra = 0
     max_num = 1
@@ -153,7 +170,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if not request.user.is_superuser:
             return
-        return ['reviewer', 'date_added']
+        return [IsListedFilter, 'reviewer', 'date_added']
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
