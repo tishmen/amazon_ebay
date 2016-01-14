@@ -15,8 +15,6 @@ from django.utils import timezone
 
 from .models import AmazonItem
 
-MAX_AMAZON_ITEM_COUNT_PER_SEARCH = 10
-
 logger = logging.getLogger(__name__)
 
 
@@ -124,7 +122,7 @@ class Amazon(object):
         search_obj.save()
         count = 0
         for result in results:
-            if count > MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
+            if count > settings.MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
                 logger.info(
                     'Reached maximum Amazon item count per search limit'
                 )

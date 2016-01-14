@@ -5,16 +5,10 @@ import logging
 import math
 
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 
 logger = logging.getLogger(__name__)
-
-MIN_AMAZON_ITEM_IMAGE_COUNT = 1
-MIN_AMAZON_ITEM_PRICE = 1
-MAX_AMAZON_ITEM_PRICE = 1000
-MIN_AMAZON_ITEM_REVIEW_COUNT = 1
-MAX_AMAZON_ITEM_REVIEW_COUNT = 1000
-EBAY_ITEM_PERCENTAGE_MARKUP = 1.5
 
 
 def to_list(value):
@@ -75,47 +69,53 @@ class AmazonItem(models.Model):
 
     def is_valid(self):
         image_list = to_list(self.image_list)
-        if len(image_list) < MIN_AMAZON_ITEM_IMAGE_COUNT:
+        if len(image_list) < settings.MIN_AMAZON_ITEM_IMAGE_COUNT:
             logger.info(
                 'Less than minimum item image count {} for item {} with image '
                 'count of {}'.format(
-                    MIN_AMAZON_ITEM_IMAGE_COUNT, self.title,
+                    settings.MIN_AMAZON_ITEM_IMAGE_COUNT, self.title,
                     len(image_list)
                 )
             )
             return
-        if self.price < MIN_AMAZON_ITEM_PRICE:
+        if self.price < settings.MIN_AMAZON_ITEM_PRICE:
             logger.info(
                 'Less than minimum amazon item price {} for item {} with price'
-                ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
-            )
-            return
-        if self.price > MAX_AMAZON_ITEM_PRICE:
-            logger.info(
-                'More than minimum amazon item price {} for item {} with price'
-                ' {}'.format(MIN_AMAZON_ITEM_PRICE, self.title, self.price)
-            )
-            return
-        if self.review_count < MIN_AMAZON_ITEM_REVIEW_COUNT:
-            logger.info(
-                'Less than minimum item review count {} for item {} with revie'
-                'w count of {}'.format(
-                    MIN_AMAZON_ITEM_REVIEW_COUNT, self.title, self.review_count
+                ' {}'.format(
+                    settings.MIN_AMAZON_ITEM_PRICE, self.title, self.price
                 )
             )
             return
-        if self.review_count > MAX_AMAZON_ITEM_REVIEW_COUNT:
+        if self.price > settings.MAX_AMAZON_ITEM_PRICE:
+            logger.info(
+                'More than minimum amazon item price {} for item {} with price'
+                ' {}'.format(
+                    settings.MIN_AMAZON_ITEM_PRICE, self.title, self.price
+                )
+            )
+            return
+        if self.review_count < settings.MIN_AMAZON_ITEM_REVIEW_COUNT:
+            logger.info(
+                'Less than minimum item review count {} for item {} with revie'
+                'w count of {}'.format(
+                    settings.MIN_AMAZON_ITEM_REVIEW_COUNT, self.title,
+                    self.review_count
+                )
+            )
+            return
+        if self.review_count > settings.MAX_AMAZON_ITEM_REVIEW_COUNT:
             logger.info(
                 'More than maximum allowed item review count {} for item {} wi'
                 'th review count {}'.format(
-                    MAX_AMAZON_ITEM_REVIEW_COUNT, self.title, self.review_count
+                    settings.MAX_AMAZON_ITEM_REVIEW_COUNT, self.title,
+                    self.review_count
                 )
             )
             return
         return True
 
     def price_after_markup(self):
-        return math.ceil(self.price * EBAY_ITEM_PERCENTAGE_MARKUP)
+        return math.ceil(self.price * settings.EBAY_ITEM_PERCENTAGE_MARKUP)
 
     def html(self):
         html = '<div id="ds_div">'\
