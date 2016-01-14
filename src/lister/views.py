@@ -9,7 +9,7 @@ def category_search_view(request, query=None):
         return HttpResponse()
     options = ''
     for category_id, category_name in ebay.category_search(query):
-        options += '<option value="{}">{}</option>\n'.format(
+        options += u'<option value="{}">{}</option>\n'.format(
             category_id, category_name
         )
     return HttpResponse(options.strip())

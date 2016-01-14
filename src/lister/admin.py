@@ -60,7 +60,7 @@ class EbayItemInline(admin.StackedInline):
     formset = EbayItemInlineFormSet
     form = EbayItemInlineForm
     readonly_fields = ['is_listed']
-    exclude = ['date_listed']
+    exclude = ['url', 'date_listed']
     extra = 0
     max_num = 1
 
@@ -147,6 +147,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return
 
+    def has_delete_permission(self, request, obj=None):
+        return
+
     def get_list_display(self, request):
         list_display = ['title', 'url_', 'price_']
         if not request.user.is_superuser:
@@ -176,6 +179,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
         actions = super(AmazonItemAdmin, self).get_actions(request)
         if not request.user.is_superuser:
             return
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
         return actions
 
     def get_form(self, request, obj=None, **kwargs):
@@ -190,10 +195,10 @@ class AmazonItemAdmin(admin.ModelAdmin):
         return mark_safe(obj.image())
 
     def is_listed_(self, obj):
-        return bool(obj.ebayitem_set.filter(is_listed__isnull=1))
+        return bool(obj.ebayitem_set.filter(is_listed=True))
 
     def list(self, request, queryset):
-        queryset = queryset.filter(ebayitem__is_listed__isnull=1)
+        queryset = queryset.filter(ebayitem__is_listed=False)
         list_task.delay(queryset)
         message = 'Listing {}'.format(
             get_message_bit(queryset.count(), 'Amazon item') + ' on Ebay'
@@ -233,9 +238,18 @@ class EbayItemAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return
 
-    # def get_queryset(self, request):
-    #     queryset = super(EbayItemAdmin, self).get_queryset(request)
-    #     return queryset.filter(is_listed__isnull=1)
+    def has_delete_permission(self, request, obj=None):
+        return
+
+    def get_queryset(self, request):
+        queryset = super(EbayItemAdmin, self).get_queryset(request)
+        return queryset.filter(is_listed=True)
+
+    def get_actions(self, request):
+        actions = super(EbayItemAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
 
     def image(self, obj):
         return mark_safe(obj.image())

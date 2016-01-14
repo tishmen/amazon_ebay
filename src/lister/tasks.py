@@ -32,7 +32,7 @@ def list_task(self, queryset):
         if not (ebay.sandbox_connection or ebay.production_connection):
             return
         for item_obj in queryset:
-            ebay.list(item_obj)
+            ebay.list(item_obj.ebayitem_set.all()[0])
         logger.info('Listed total of {} Ebay items'.format(ebay.total_count))
     except:
         logger.error(traceback.format_exc())

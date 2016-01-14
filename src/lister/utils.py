@@ -200,15 +200,15 @@ class Ebay(object):
     def list(self, item_obj):
         if settings.DEBUG:
             connection = self.sandbox_connection
-            url = 'http://www.ebay.com/itm/-/{}?ssPageName=ADME:L:LCA:US:1123'
-        else:
-            connection = self.produiction_connection
             url = 'http://cgi.sandbox.ebay.com/ws/eBayISAPI.dll?ViewItem&item'\
                 '={}&ssPageName=STRK:MESELX:IT'
+        else:
+            connection = self.produiction_connection
+            url = 'http://www.ebay.com/itm/-/{}?ssPageName=ADME:L:LCA:US:1123'
         item_dict = {
             'Item': {
                 'Title': item_obj.title,
-                'Description': item_obj.html,
+                'Description': '<![CDATA[{}]]>'.format(item_obj.html),
                 'PrimaryCategory': {'CategoryID': item_obj.category_id},
                 'StartPrice': item_obj.price,
                 'CategoryMappingAllowed': 'true',
@@ -224,13 +224,11 @@ class Ebay(object):
                 'PictureDetails': {
                     'PictureURL': item_obj.image_list(),
                 },
-                'NameValueList': [
-                    {'Name': 'Brand', 'Value': item_obj.manufacturer},
-                    {'Name': 'MPN', 'Value': item_obj.model},
-                ],
-                'ProductListingDetails': {
-                    'UPC': item_obj.upc,
-                    'ListIfNoProduct': 'true',
+                'ItemSpecifics': {
+                    'NameValueList': [
+                        {'Name': 'Brand', 'Value': item_obj.manufacturer},
+                        {'Name': 'MPN', 'Value': item_obj.mpn},
+                    ]
                 },
                 'PostalCode': '90001',
                 'Quantity': '1',
@@ -253,11 +251,20 @@ class Ebay(object):
                 'Site': 'US',
             }
         }
+        if item_obj.upc:
+            item_dict['Item'] = {
+                'ProductListingDetails': {
+                    'UPC': item_obj.upc,
+                    'ListIfNoProduct': 'true',
+                },
+            }
+
         try:
             response = connection.execute('AddFixedPriceItem', item_dict)
             logger.info(u'Listed Ebay item {}'.format(item_obj.title))
             item_obj.url = url.format(response.dict()['ItemID'])
             item_obj.is_listed = True
+            item_obj.date_listed = timezone.now()
             try:
                 item_obj.save()
                 logger.info(u'Saved Ebay item {}'.format(item_obj.title))
