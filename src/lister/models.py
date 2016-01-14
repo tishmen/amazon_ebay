@@ -21,7 +21,6 @@ class AmazonSearch(models.Model):
     date_searched = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-
         verbose_name_plural = 'amazon searches'
 
     def __str__(self):
