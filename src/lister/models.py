@@ -122,9 +122,10 @@ class AmazonItem(models.Model):
             'ong>{}</strong></span></h1>'\
             '<h1 class="p2" style="text-align: center;"><span class="s1"><str'\
             'ong>Product Description:</strong></span></h1>'\
-            '<h2><strong>&lt; Insert Description Here &gt;</strong></h2>'\
-            '<h2 class="p2"><span class="s1"><strong>Features:</strong></span'\
-            '></h2><ul class="ul1">'.format(self.title)
+            '<h2><strong>&lt; Insert Description Here &gt;</strong></h2><h2>&'\
+            'nbsp;</h2>'\
+            '<h2 class="p2"><span class="s1">Features:</span></h2><ul class="'\
+            'ul1">'.format(self.title)
         for feature in to_list(self.feature_list):
             html += '<li class="li3"><span class="s1">{}</span></li>'.format(
                 feature

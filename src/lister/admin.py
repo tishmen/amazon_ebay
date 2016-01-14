@@ -81,6 +81,9 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_filter = ['date_searched']
     list_display = ['query', 'result_count', 'date_searched']
 
+    def has_delete_permission(self, request, obj=None):
+        return
+
     def add_view(self, request, form_url='', extra_context=None):
         self.fieldsets = [[None, {'fields': ['query']}]]
         self.readonly_fields = []
@@ -102,6 +105,12 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         queryset = super(AmazonSearchAdmin, self).get_queryset(request)
         queryset = queryset.annotate(models.Count('amazonitem'))
         return queryset
+
+    def get_actions(self, request):
+        actions = super(AmazonSearchAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
 
     def result_count(self, obj):
         return obj.amazonitem__count
