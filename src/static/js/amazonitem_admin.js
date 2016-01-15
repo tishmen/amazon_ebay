@@ -1,16 +1,17 @@
 django.jQuery(document).ready(function($) {
 
-
   $('#id_ebayitem_set-0-title').bind('keydown keyup', function () {
     $('#id_ebayitem_set-0-title + .help').html($('#id_ebayitem_set-0-title').val().length + ' characters');
   });
 
   $('#id_ebayitem_set-0-category_search').after('<button id="search_button" type="button">Search</button>');
 
-  $.get('/search/' + $('#id_ebayitem_set-0-category_search').val(), function(data) {
-    $('#id_ebayitem_set-0-category_id').html(data);
-    $('#id_ebayitem_set-0-category_name').val($('#id_ebayitem_set-0-category_id option:first').text());
-  });
+  if ($('#id_ebayitem_set-0-category_id option:selected').length == 0) {
+    $.get('/search/' + $('#id_ebayitem_set-0-category_search').val(), function(data) {
+      $('#id_ebayitem_set-0-category_id').html(data);
+      $('#id_ebayitem_set-0-category_name').val($('#id_ebayitem_set-0-category_id option:first').text());
+    });
+  }
 
   $('#search_button').bind('click', function () {
     $.get('/search/' + $('#id_ebayitem_set-0-category_search').val(), function(data) {

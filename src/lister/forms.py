@@ -45,10 +45,20 @@ class EbayItemInlineForm(forms.ModelForm):
         if title:
             self.fields['title'].help_text = '{} characters'.format(len(title))
 
+    def set_category(self, *args, **kwargs):
+        category_id = kwargs.get('initial', {}).get('category_id')
+        category_name = kwargs.get('initial', {}).get('category_name')
+        if category_id and category_name:
+            self.fields['category_id'] = forms.IntegerField(
+                label='Category',
+                widget=forms.Select(choices=[(category_id, category_name)])
+            )
+
     def __init__(self, *args, **kwargs):
         super(EbayItemInlineForm, self).__init__(*args, **kwargs)
         self.set_readonly(*args, **kwargs)
         self.set_title_help_text(*args, **kwargs)
+        self.set_category(*args, **kwargs)
 
     class Meta:
         model = EbayItem
@@ -61,7 +71,14 @@ class EbayItemInlineFormSet(forms.BaseInlineFormSet):
         super(EbayItemInlineFormSet, self).__init__(*args, **kwargs)
         try:
             item = kwargs['instance'].ebayitem_set.all()[0]
-            self.initial = [{'readonly': item.is_listed}]
+            self.initial = [
+                {
+                    'readonly': item.is_listed,
+                    'title': item.title,
+                    'category_id': item.category_id,
+                    'category_name': item.category_name,
+                }
+            ]
         except IndexError:
             self.initial = [
                 {

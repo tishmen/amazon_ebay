@@ -214,7 +214,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             return
         return [
-            HasErrorFilter, IsListedFilter, 'reviewer', 'search__query',
+            IsListedFilter, HasErrorFilter, 'reviewer', 'search__query',
             'date_added'
         ]
 
