@@ -51,6 +51,24 @@ class IsListedFilter(admin.SimpleListFilter):
         return queryset
 
 
+class HasErrorFilter(admin.SimpleListFilter):
+
+    title = 'has error'
+    parameter_name = 'has_error'
+
+    def lookups(self, request, model_admin):
+        return [('1', 'Yes'), ('0', 'No')]
+
+    def queryset(self, request, queryset):
+        lookup_value = self.value()
+        if lookup_value:
+            if lookup_value == '1':
+                queryset = queryset.filter(ebayitem__error__isnull=0)
+            elif lookup_value == '0':
+                queryset = queryset.filter(ebayitem__error=None)
+        return queryset
+
+
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
@@ -174,7 +192,9 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def lookup_allowed(self, key, *args, **kwargs):
         if key in ['is_listed', 'reviewer', 'search__query', 'date_added']:
             return True
-        return super(AmazonItemAdmin, self).lookup_allowed(key)
+        return super(AmazonItemAdmin, self).lookup_allowed(
+            key, *args, **kwargs
+        )
 
     def get_list_display(self, request):
         list_display = ['title', 'url_', 'price_']
@@ -193,7 +213,10 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if not request.user.is_superuser:
             return
-        return [IsListedFilter, 'reviewer', 'search__query', 'date_added']
+        return [
+            HasErrorFilter, IsListedFilter, 'reviewer', 'search__query',
+            'date_added'
+        ]
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)

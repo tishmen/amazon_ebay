@@ -36,17 +36,19 @@ class EbayItemInlineForm(forms.ModelForm):
     category_name = forms.CharField(widget=forms.HiddenInput)
 
     def set_readonly(self, *args, **kwargs):
-        for _, field in self.fields.items():
-            field.widget.attrs['readonly'] = 'readonly'
-
-    def __init__(self, *args, **kwargs):
-        super(EbayItemInlineForm, self).__init__(*args, **kwargs)
         if kwargs.get('initial', {}).get('readonly'):
             for _, field in self.fields.items():
                 field.widget.attrs['readonly'] = 'readonly'
+
+    def set_title_help_text(self, *args, **kwargs):
         title = kwargs.get('initial', {}).get('title')
         if title:
             self.fields['title'].help_text = '{} characters'.format(len(title))
+
+    def __init__(self, *args, **kwargs):
+        super(EbayItemInlineForm, self).__init__(*args, **kwargs)
+        self.set_readonly(*args, **kwargs)
+        self.set_title_help_text(*args, **kwargs)
 
     class Meta:
         model = EbayItem
