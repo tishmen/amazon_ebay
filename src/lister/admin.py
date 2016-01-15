@@ -170,6 +170,11 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return
 
+    def lookup_allowed(self, key, *args, **kwargs):
+        if key in ['is_listed', 'reviewer', 'search__query', 'date_added']:
+            return True
+        return super(AmazonItemAdmin, self).lookup_allowed(key)
+
     def get_list_display(self, request):
         list_display = ['title', 'url_', 'price_']
         if not request.user.is_superuser:
@@ -187,7 +192,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if not request.user.is_superuser:
             return
-        return [IsListedFilter, 'reviewer', 'date_added']
+        return [IsListedFilter, 'reviewer', 'search__query', 'date_added']
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
