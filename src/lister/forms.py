@@ -37,12 +37,16 @@ class EbayItemInlineForm(forms.ModelForm):
 
     def set_readonly(self, *args, **kwargs):
         for _, field in self.fields.items():
-            field.widget.attrs['readonly'] = "readonly"
+            field.widget.attrs['readonly'] = 'readonly'
 
     def __init__(self, *args, **kwargs):
         super(EbayItemInlineForm, self).__init__(*args, **kwargs)
         if kwargs.get('initial', {}).get('readonly'):
-            self.set_readonly(*args, **kwargs)
+            for _, field in self.fields.items():
+                field.widget.attrs['readonly'] = 'readonly'
+        title = kwargs.get('initial', {}).get('title')
+        if title:
+            self.fields['title'].help_text = '{} categories'.format(len(title))
 
     class Meta:
         model = EbayItem

@@ -78,7 +78,8 @@ class EbayItemInline(admin.StackedInline):
                 {
                     'fields': [
                         'title', 'price', 'html', 'category_search',
-                        'category_id', 'manufacturer', 'mpn', 'upc', 'note'
+                        'category_id', 'category_name', 'manufacturer', 'mpn',
+                        'upc', 'note'
                     ]
                 }
             ]
