@@ -54,7 +54,7 @@ class IsListedFilter(admin.SimpleListFilter):
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
-    readonly_fields = ['title_', 'url_', 'price_']
+    readonly_fields = ['', 'title_', 'url_', 'price_']
     fieldsets = [[None, {'fields': readonly_fields}]]
     can_delete = False
     extra = 0
@@ -66,10 +66,29 @@ class EbayItemInline(admin.StackedInline):
     model = EbayItem
     formset = EbayItemInlineFormSet
     form = EbayItemInlineForm
-    exclude = ['url', 'is_listed', 'date_listed']
+    readonly_fields = ['error_']
     can_delete = False
     extra = 0
     max_num = 1
+
+    def get_fieldsets(self, request, obj):
+        fieldsets = [
+            [
+                None,
+                {
+                    'fields': [
+                        'title', 'price', 'html', 'category_search',
+                        'category_id', 'manufacturer', 'mpn', 'upc', 'note'
+                    ]
+                }
+            ]
+        ]
+        item = obj.ebayitem_set.first()
+        if item and item.error:
+            fieldsets[0][1]['fields'] = (
+                ['error_'] + fieldsets[0][1]['fields']
+            )
+        return fieldsets
 
 
 @admin.register(AmazonSearch)
@@ -222,19 +241,19 @@ class AmazonItemAdmin(admin.ModelAdmin):
 @admin.register(EbayItem)
 class EbayItemAdmin(admin.ModelAdmin):
 
+    form = EbayItemForm
     search_fields = ['title', 'manufacturer', 'mpn']
     list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
     readonly_fields = [
         'url_', 'title', 'image', 'price_', 'category_name', 'manufacturer',
-        'mpn', 'upc'
+        'mpn', 'upc', 'html'
     ]
     fieldsets = [
         [
             None,
-            {'fields': readonly_fields[:3] + ['html'] + readonly_fields[4:]}
+            {'fields': readonly_fields[:3] + ['html'] + readonly_fields[4:-1]}
         ]
     ]
-    form = EbayItemForm
 
     def has_add_permission(self, request):
         return

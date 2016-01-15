@@ -256,20 +256,20 @@ class Ebay(object):
                     'ListIfNoProduct': 'true',
                 },
             }
-
         try:
             response = connection.execute('AddFixedPriceItem', item_dict)
             logger.info(u'Listed Ebay item {}'.format(item_obj.title))
             item_obj.url = url.format(response.dict()['ItemID'])
             item_obj.is_listed = True
             item_obj.date_listed = timezone.now()
-            try:
-                item_obj.save()
-                logger.info(u'Saved Ebay item {}'.format(item_obj.title))
-                self.total_count += 1
-            except:
-                logger.info(
-                    u'Failed to save Ebay item {}'.format(item_obj.title)
-                )
         except:
             logger.info(u'Failed to list Ebay item {}'.format(item_obj.title))
+            item_obj.error = traceback.format_exc()
+        try:
+            item_obj.save()
+            logger.info(u'Saved Ebay item {}'.format(item_obj.title))
+            self.total_count += 1
+        except:
+            logger.info(
+                u'Failed to save Ebay item {}'.format(item_obj.title)
+            )

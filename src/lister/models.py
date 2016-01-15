@@ -191,6 +191,7 @@ class EbayItem(models.Model):
     note = models.TextField(null=True, blank=True)
     is_listed = models.BooleanField(default=False)
     date_listed = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -219,6 +220,9 @@ class EbayItem(models.Model):
     def image_list(self):
         return to_list(self.item.image_list)[0]
 
+    def error_(self):
+        return '<strong style="color:red">{}</strong>'.format(self.error)
+
     url_.short_description = 'url'
     url_.allow_tags = True
     url_.admin_order_field = 'url'
@@ -230,3 +234,4 @@ class EbayItem(models.Model):
     price_.short_description = 'price'
     price_.allow_tags = True
     price_.admin_order_field = 'price'
+    error_.allow_tags = True
