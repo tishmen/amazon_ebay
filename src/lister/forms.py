@@ -46,7 +46,7 @@ class EbayItemInlineForm(forms.ModelForm):
                 field.widget.attrs['readonly'] = 'readonly'
         title = kwargs.get('initial', {}).get('title')
         if title:
-            self.fields['title'].help_text = '{} categories'.format(len(title))
+            self.fields['title'].help_text = '{} characters'.format(len(title))
 
     class Meta:
         model = EbayItem
