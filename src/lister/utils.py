@@ -196,7 +196,7 @@ class Ebay(object):
         ]
 
     def list(self, item_obj):
-        if settings.DEBUG:
+        if settings.USE_SANDBOX:
             connection = self.sandbox_connection
             url = 'http://cgi.sandbox.ebay.com/ws/eBayISAPI.dll?ViewItem&item'\
                 '={}&ssPageName=STRK:MESELX:IT'

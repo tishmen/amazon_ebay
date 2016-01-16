@@ -218,7 +218,7 @@ class EbayItem(models.Model):
         return self.item.image()
 
     def image_list(self):
-        return to_list(self.item.image_list)[0]
+        return to_list(self.item.image_list)
 
     def error_(self):
         return '<strong style="color:red">{}</strong>'.format(self.error)
