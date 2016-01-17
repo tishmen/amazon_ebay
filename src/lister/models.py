@@ -186,8 +186,6 @@ class EbayItem(models.Model):
     def get_url(self):
         if self.url:
             return '<a href="{0}" target="_blank">{0}</a>'.format(self.url)
-        else:
-            return
 
     get_url.short_description = get_url.admin_order_field = 'url'
     get_url.allow_tags = True

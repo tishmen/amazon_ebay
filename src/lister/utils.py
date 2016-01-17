@@ -169,8 +169,7 @@ class Ebay(object):
             )
             logger.info('Established Ebay Sandbox API connection')
         except:
-            self.production_connection = None
-            self.sandbox_connection = None
+            self.production_connection = self.sandbox_connection = None
             logger.error(traceback.format_exc())
             logger.error('Failed to establish Ebay API connection')
         self.total_count = 0
@@ -266,6 +265,4 @@ class Ebay(object):
             logger.info(u'Saved Ebay item {}'.format(item_obj.title))
             self.total_count += 1
         except:
-            logger.info(
-                u'Failed to save Ebay item {}'.format(item_obj.title)
-            )
+            logger.info(u'Failed to save Ebay item {}'.format(item_obj.title))
