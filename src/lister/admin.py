@@ -61,7 +61,7 @@ class HasErrorFilter(BoolFilter):
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
-    readonly_fields = ['', 'get_title', 'get_url', 'get_price']
+    readonly_fields = ['get_title', 'get_url', 'get_price']
     fieldsets = [[None, {'fields': readonly_fields}]]
     can_delete = False
     extra = 0
@@ -101,7 +101,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     list_display = ['query', 'get_result_count', 'date_searched']
 
     def has_delete_permission(self, request, obj=None):
-        return
+        pass
 
     def add_view(self, request, *args, **kwargs):
         self.fieldsets = [[None, {'fields': ['query']}]]
@@ -132,8 +132,8 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     def get_result_count(self, obj):
         return obj.amazonitem__count
 
-    get_result_count.admin_order_field = 'amazonitem__count'
     get_result_count.short_description = 'result count'
+    get_result_count.admin_order_field = 'amazonitem__count'
 
     def search_action(self, request, queryset):
         search_task.delay(queryset)
