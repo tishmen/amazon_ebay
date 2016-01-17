@@ -98,7 +98,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     search_fields = ['query']
     actions = ['search_action']
     list_filter = ['date_searched']
-    list_display = ['query', 'result_count', 'date_searched']
+    list_display = ['query', 'get_result_count', 'date_searched']
 
     def has_delete_permission(self, request, obj=None):
         return
@@ -129,10 +129,11 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
             del actions['delete_selected']
         return actions
 
-    def result_count(self, obj):
+    def get_result_count(self, obj):
         return obj.amazonitem__count
 
-    result_count.admin_order_field = 'amazonitem__count'
+    get_result_count.admin_order_field = 'amazonitem__count'
+    get_result_count.short_description = 'result count'
 
     def search_action(self, request, queryset):
         search_task.delay(queryset)
@@ -177,8 +178,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         list_display = [
-            'title', 'get_url', 'get_price', 'reviewer', 'get_is_listed',
-            'date_added'
+            'title', 'get_url', 'get_price', 'reviewer', 'get_is_reviewed',
+            'get_is_listed', 'date_added'
         ]
         if not request.user.is_superuser:
             list_display.remove('reviewer')
@@ -222,6 +223,13 @@ class AmazonItemAdmin(admin.ModelAdmin):
         return bool(obj.ebayitem_set.filter(is_listed=True))
 
     get_is_listed.boolean = True
+    get_is_listed.short_description = 'is listed'
+
+    def get_is_reviewed(self, obj):
+        return bool(obj.ebayitem_set.all())
+
+    get_is_reviewed.boolean = True
+    get_is_reviewed.short_description = 'is reviewed'
 
     def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
