@@ -9,7 +9,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 
 from .forms import (
-    ReviewerForm, EbayItemInlineForm, EbayItemInlineFormSet, EbayItemForm
+    ChangeReviewerForm, EbayItemInlineForm, EbayItemInlineFormSet, EbayItemForm
 )
 from .models import AmazonSearch, AmazonItem, EbayItem
 from .tasks import search_task, list_task
@@ -20,10 +20,12 @@ logger = logging.getLogger(__name__)
 def get_message_bit(count, obj_name, obj_name_multiple=None):
     if count == 1:
         return '1 {}'.format(obj_name)
-    else:
-        if not obj_name_multiple:
-            obj_name_multiple = obj_name + 's'
-        return '{} {}'.format(count, obj_name_multiple)
+    if not obj_name_multiple:
+        obj_name_multiple = obj_name + 's'
+    return '{} {}'.format(count, obj_name_multiple)
+
+
+# import-export resource classes
 
 
 class AmazonSearchResource(resources.ModelResource):
@@ -33,41 +35,37 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
-class IsListedFilter(admin.SimpleListFilter):
+# extra admin filter classes
+
+
+class BoolFilter(admin.SimpleListFilter):
+
+    def lookups(self, request, model_admin):
+        return [('1', 'Yes'), ('0', 'No')]
+
+    def queryset(self, request, queryset):
+        val = int(self.value())
+        if not val:
+            return queryset
+        query = {self.query: None if not val else val}
+        return queryset.filter(**query)
+
+
+class IsListedFilter(BoolFilter):
 
     title = 'is listed'
     parameter_name = 'is_listed'
-
-    def lookups(self, request, model_admin):
-        return [('1', 'Yes'), ('0', 'No')]
-
-    def queryset(self, request, queryset):
-        lookup_value = self.value()
-        if lookup_value:
-            if lookup_value == '1':
-                queryset = queryset.filter(ebayitem__is_listed=True)
-            elif lookup_value == '0':
-                queryset = queryset.filter(ebayitem__is_listed=None)
-        return queryset
+    query = 'ebayitem__is_listed'
 
 
-class HasErrorFilter(admin.SimpleListFilter):
+class HasErrorFilter(BoolFilter):
 
     title = 'has error'
     parameter_name = 'has_error'
+    query = 'ebayitem__error'
 
-    def lookups(self, request, model_admin):
-        return [('1', 'Yes'), ('0', 'No')]
 
-    def queryset(self, request, queryset):
-        lookup_value = self.value()
-        if lookup_value:
-            if lookup_value == '1':
-                queryset = queryset.filter(ebayitem__error__isnull=0)
-            elif lookup_value == '0':
-                queryset = queryset.filter(ebayitem__error=None)
-        return queryset
-
+# admin inline classes
 
 class AmazonItemInline(admin.TabularInline):
 
@@ -90,25 +88,18 @@ class EbayItemInline(admin.StackedInline):
     max_num = 1
 
     def get_fieldsets(self, request, obj):
-        fieldsets = [
-            [
-                None,
-                {
-                    'fields': [
-                        'title', 'price', 'html', 'category_search',
-                        'category_id', 'category_name', 'manufacturer', 'mpn',
-                        'upc', 'note'
-                    ]
-                }
-            ]
+        fields = [
+            'title', 'price', 'html', 'category_search', 'category_id',
+            'category_name', 'manufacturer', 'mpn', 'upc', 'note'
         ]
+        fieldsets = [[None, {'fields': fields}]]
         item = obj.ebayitem_set.first()
         if item and item.error:
-            fieldsets[0][1]['fields'] = (
-                ['error_'] + fieldsets[0][1]['fields']
-            )
+            fieldsets[0][1]['fields'] = ['error_'] + fieldsets[0][1]['fields']
         return fieldsets
 
+
+# admin views
 
 @admin.register(AmazonSearch)
 class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
@@ -122,27 +113,25 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return
 
-    def add_view(self, request, form_url='', extra_context=None):
+    def add_view(self, request, *args, **kwargs):
         self.fieldsets = [[None, {'fields': ['query']}]]
-        self.readonly_fields = []
-        self.inlines = []
+        self.readonly_fields = self.inlines = []
         return super(AmazonSearchAdmin, self).add_view(
-            request, form_url, extra_context
+            request, *args, **kwargs
         )
 
-    def change_view(self, request, object_id, form_url='', extra_context=None):
+    def change_view(self, request, object_id, *args, **kwargs):
         self.readonly_fields = ['query', 'date_searched']
         self.fieldsets = [[None, {'fields': self.readonly_fields}]]
-        if AmazonSearch.objects.get(id=object_id).amazonitem_set.all():
+        if AmazonSearch.objects.get(id=object_id).amazonitem_set.count():
             self.inlines = [AmazonItemInline]
         return super(AmazonSearchAdmin, self).change_view(
-            request, object_id, form_url, extra_context
+            request, object_id, *args, **kwargs
         )
 
     def get_queryset(self, request):
         queryset = super(AmazonSearchAdmin, self).get_queryset(request)
-        queryset = queryset.annotate(models.Count('amazonitem'))
-        return queryset
+        return queryset.annotate(models.Count('amazonitem'))
 
     def get_actions(self, request):
         actions = super(AmazonSearchAdmin, self).get_actions(request)
@@ -153,17 +142,16 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     def result_count(self, obj):
         return obj.amazonitem__count
 
+    result_count.admin_order_field = 'amazonitem__count'
+
     def search(self, request, queryset):
         search_task.delay(queryset)
-        message = 'Searching for {}'.format(
-            get_message_bit(
-                queryset.count(), 'amazon search', 'amazon searches'
-            )
+        message = 'Searching for amazon {}'.format(
+            get_message_bit(queryset.count(), 'search', 'searches')
         )
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
 
-    result_count.admin_order_field = 'amazonitem__count'
     search.short_description = 'Search for selected amazon searches'
 
 
@@ -176,7 +164,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     ]
     fieldsets = [[None, {'fields': readonly_fields + ['reviewer']}]]
     inlines = [EbayItemInline]
-    action_form = ReviewerForm
+    action_form = ChangeReviewerForm
     actions = ['list', 'change_reviewer']
 
     class Media:
@@ -184,10 +172,10 @@ class AmazonItemAdmin(admin.ModelAdmin):
         js = ['js/amazonitem_admin.js']
 
     def has_add_permission(self, request):
-        return
+        pass
 
     def has_delete_permission(self, request, obj=None):
-        return
+        pass
 
     def lookup_allowed(self, key, *args, **kwargs):
         if key in ['is_listed', 'reviewer', 'search__query', 'date_added']:
@@ -197,26 +185,24 @@ class AmazonItemAdmin(admin.ModelAdmin):
         )
 
     def get_list_display(self, request):
-        list_display = ['title', 'url_', 'price_']
-        if not request.user.is_superuser:
-            return list_display + ['is_listed_', 'date_added']
-        return list_display + ['reviewer', 'is_listed_', 'date_added']
+        list_display = [
+            'title', 'url_', 'price_', 'reviewer', 'is_listed_', 'date_added'
+        ]
+        if request.user.is_superuser:
+            list_display.remove('reviewer')
+        return list_display
 
     def get_fieldsets(self, request, obj=None):
-        fieldsets = copy.deepcopy(
-            super(AmazonItemAdmin, self).get_fieldsets(request)
-        )
-        if not request.user.is_superuser:
-            fieldsets[0][1]['fields'].remove('reviewer')
-        return fieldsets
+        if request.user.is_superuser:
+            return [[None, {'fields': self.readonly_fields + ['reviewer']}]]
+        return [[None, {'fields': self.readonly_fields}]]
 
     def get_list_filter(self, request):
-        if not request.user.is_superuser:
-            return
-        return [
-            IsListedFilter, HasErrorFilter, 'reviewer', 'search__query',
-            'date_added'
-        ]
+        if request.user.is_superuser:
+            return [
+                IsListedFilter, HasErrorFilter, 'reviewer', 'search__query',
+                'date_added'
+            ]
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
@@ -226,18 +212,15 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_actions(self, request):
         actions = super(AmazonItemAdmin, self).get_actions(request)
-        if not request.user.is_superuser:
-            return
-        if 'delete_selected' in actions:
+        if request.user.is_superuser and 'delete_selected' in actions:
             del actions['delete_selected']
         return actions
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(AmazonItemAdmin, self).get_form(request, obj, **kwargs)
-        if not request.user.is_superuser:
-            return form
-        form.base_fields['reviewer'].widget.can_add_related = False
-        form.base_fields['reviewer'].widget.can_change_related = False
+        if request.user.is_superuser:
+            form.base_fields['reviewer'].widget.can_add_related = False
+            form.base_fields['reviewer'].widget.can_change_related = False
         return form
 
     def image(self, obj):
@@ -245,6 +228,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def is_listed_(self, obj):
         return bool(obj.ebayitem_set.filter(is_listed=True))
+
+    is_listed_.boolean = True
 
     def list(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
@@ -254,15 +239,15 @@ class AmazonItemAdmin(admin.ModelAdmin):
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
+    list.short_description = 'List selected amazon items on ebay'
+
     def change_reviewer(self, request, queryset):
         queryset.update(reviewer=request.POST.get('reviewer'))
-        message = 'Changing reviewer for {}'.format(
-            get_message_bit(queryset.count(), 'amazon item')
+        message = 'Changing reviewer for amazon {}'.format(
+            get_message_bit(queryset.count(), 'item')
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    is_listed_.boolean = True
-    list.short_description = 'List selected amazon items on ebay'
     change_reviewer.short_description = 'Change reviewer for selected amazon '\
         'items'
 
@@ -270,25 +255,22 @@ class AmazonItemAdmin(admin.ModelAdmin):
 @admin.register(EbayItem)
 class EbayItemAdmin(admin.ModelAdmin):
 
-    form = EbayItemForm
-    search_fields = ['title', 'manufacturer', 'mpn']
-    list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
-    readonly_fields = [
+    fields_ = [
         'url_', 'title', 'image', 'price_', 'category_name', 'manufacturer',
         'mpn', 'upc'
     ]
-    fieldsets = [
-        [
-            None,
-            {'fields': readonly_fields[:3] + ['html'] + readonly_fields[4:-1]}
-        ]
-    ]
+
+    list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
+    search_fields = ['title', 'manufacturer', 'mpn']
+    fieldsets = [[None, {'fields': fields_}]]
+    readonly_fields = fields_ + ['html']
+    form = EbayItemForm
 
     def has_add_permission(self, request):
-        return
+        pass
 
     def has_delete_permission(self, request, obj=None):
-        return
+        pass
 
     def get_queryset(self, request):
         queryset = super(EbayItemAdmin, self).get_queryset(request)

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from .models import EbayItem
 
 
-class ReviewerForm(ActionForm):
+class ChangeReviewerForm(ActionForm):
 
     reviewer = forms.ModelChoiceField(
         required=False, queryset=User.objects.all()
@@ -33,11 +33,6 @@ class EbayItemInlineForm(forms.ModelForm):
     category_id = forms.IntegerField(label='Category', widget=forms.Select)
     category_name = forms.CharField(widget=forms.HiddenInput)
 
-    def set_readonly(self, *args, **kwargs):
-        if kwargs.get('initial', {}).get('readonly'):
-            for _, field in self.fields.items():
-                field.widget.attrs['readonly'] = 'readonly'
-
     def set_title_help_text(self, *args, **kwargs):
         title = kwargs.get('initial', {}).get('title')
         if title:
@@ -52,11 +47,16 @@ class EbayItemInlineForm(forms.ModelForm):
                 widget=forms.Select(choices=[(category_id, category_name)])
             )
 
+    def set_readonly(self, *args, **kwargs):
+        if kwargs.get('initial', {}).get('readonly'):
+            for _, field in self.fields.items():
+                field.widget.attrs['readonly'] = 'readonly'
+
     def __init__(self, *args, **kwargs):
         super(EbayItemInlineForm, self).__init__(*args, **kwargs)
-        self.set_readonly(*args, **kwargs)
         self.set_title_help_text(*args, **kwargs)
         self.set_category(*args, **kwargs)
+        self.set_readonly(*args, **kwargs)
 
     class Meta:
         model = EbayItem
@@ -68,24 +68,25 @@ class EbayItemInlineFormSet(forms.BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         super(EbayItemInlineFormSet, self).__init__(*args, **kwargs)
         try:
-            item = kwargs['instance'].ebayitem_set.all()[0]
+            ebay_item = kwargs['instance'].ebayitem_set.all()[0]
             self.initial = [
                 {
-                    'readonly': item.is_listed,
-                    'title': item.title,
-                    'category_id': item.category_id,
-                    'category_name': item.category_name,
+                    'readonly': ebay_item.is_listed,
+                    'title': ebay_item.title,
+                    'category_id': ebay_item.category_id,
+                    'category_name': ebay_item.category_name,
                 }
             ]
         except IndexError:
+            amazon_item = kwargs['instance']
             self.initial = [
                 {
-                    'title': kwargs['instance'].title,
-                    'price': kwargs['instance'].price_after_markup(),
-                    'html': kwargs['instance'].html(),
-                    'category_search': kwargs['instance'].search.query,
-                    'manufacturer': kwargs['instance'].manufacturer,
-                    'mpn': kwargs['instance'].mpn
+                    'title': amazon_item.title,
+                    'price': amazon_item.price_after_markup(),
+                    'html': amazon_item.html(),
+                    'category_search': amazon_item.search.query,
+                    'manufacturer': amazon_item.manufacturer,
+                    'mpn': amazon_item.mpn
                 }
             ]
         self.extra += len(self.initial)

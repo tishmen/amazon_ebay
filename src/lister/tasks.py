@@ -10,8 +10,8 @@ logger = get_task_logger(__name__)
 
 @shared_task(bind=True)
 def search_task(self, queryset):
-    logger.info('Starting Amazon search task')
     try:
+        logger.info('Starting Amazon search task')
         amazon = Amazon()
         if not amazon.connection:
             return
@@ -26,8 +26,8 @@ def search_task(self, queryset):
 
 @shared_task(bind=True)
 def list_task(self, queryset):
-    logger.info('Starting Ebay list task')
     try:
+        logger.info('Starting Ebay list task')
         ebay = Ebay()
         if not (ebay.sandbox_connection or ebay.production_connection):
             return
