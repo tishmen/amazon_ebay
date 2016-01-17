@@ -44,6 +44,13 @@ class BoolFilter(admin.SimpleListFilter):
         return queryset.filter(**query)
 
 
+class IsReadyFilter(BoolFilter):
+
+    title = 'is ready'
+    parameter_name = 'is_ready'
+    query = 'ebayitem__is_ready'
+
+
 class IsListedFilter(BoolFilter):
 
     title = 'is listed'
@@ -180,7 +187,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_display(self, request):
         list_display = [
             'title', 'get_url', 'get_price', 'reviewer', 'get_is_ready',
-            'get_is_listed', 'date_added'
+            'get_is_listed', 'get_has_error', 'date_added'
         ]
         if not request.user.is_superuser:
             list_display.remove('reviewer')
@@ -195,8 +202,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if request.user.is_superuser:
             return [
-                IsListedFilter, HasErrorFilter, 'reviewer', 'search__query',
-                'date_added'
+                IsReadyFilter, IsListedFilter, HasErrorFilter, 'reviewer',
+                'search__query', 'date_added'
             ]
 
     def get_queryset(self, request):
@@ -232,11 +239,20 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_is_ready(self, obj):
         try:
             return obj.get_related_ebay_item().is_ready
-        except IndexError:
+        except AttributeError:
             return False
 
     get_is_ready.boolean = True
     get_is_ready.short_description = 'is ready'
+
+    def get_has_error(self, obj):
+        try:
+            return bool(obj.get_related_ebay_item().error)
+        except AttributeError:
+            return False
+
+    get_has_error.boolean = True
+    get_has_error.short_description = 'has error'
 
     def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
