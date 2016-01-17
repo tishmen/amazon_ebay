@@ -26,11 +26,11 @@ class Amazon(object):
                 settings.AMAZON_ACCESS_KEY, settings.AMAZON_SECRET_KEY,
                 settings.AMAZON_ASSOCIATE_TAG
             )
-            logger.info('Established Amazon API connection')
+            logger.info(u'Established Amazon API connection')
         except:
             self.connection = None
             logger.error(traceback.format_exc())
-            logger.error('Failed to establish Amazon API connection')
+            logger.error(u'Failed to establish Amazon API connection')
         self.total_count = 0
 
     def get_review_count(self, title, url, has_review, review_url):
@@ -51,7 +51,7 @@ class Amazon(object):
             logger.warning(
                 u'Review count for Amazon item {} from url {} not foun'
                 'd'.format(title, url)
-            )
+                )
             return 0
         except:
             logger.error(traceback.format_exc())
@@ -94,7 +94,7 @@ class Amazon(object):
         }
         message = 'Parsed Amazon item:\n'
         for key, value in item.items():
-            message += u'{}: {}\n'.format(key.upper(), value)
+            message += '{}: {}\n'.format(key.upper(), value)
         logger.info(message.strip())
         return item
 
@@ -123,7 +123,7 @@ class Amazon(object):
         for result in results:
             if count > settings.MAX_AMAZON_ITEM_COUNT_PER_SEARCH:
                 logger.info(
-                    'Reached maximum Amazon item count per search limit'
+                    u'Reached maximum Amazon item count per search limit'
                 )
                 break
             result = self.parse_result(result, search_obj)
@@ -160,18 +160,18 @@ class Ebay(object):
                 certid=settings.EBAY_PRODUCTION_CERTID,
                 token=settings.EBAY_PRODUCTION_TOKEN, config_file=None
             )
-            logger.info('Established Ebay Production API connection')
+            logger.info(u'Established Ebay Production API connection')
             self.sandbox_connection = Trading(
                 domain='api.sandbox.ebay.com', devid=settings.EBAY_DEVID,
                 appid=settings.EBAY_SANDBOX_APPID,
                 certid=settings.EBAY_SANDBOX_CERTID,
                 token=settings.EBAY_SANDBOX_TOKEN, config_file=None
             )
-            logger.info('Established Ebay Sandbox API connection')
+            logger.info(u'Established Ebay Sandbox API connection')
         except:
             self.production_connection = self.sandbox_connection = None
             logger.error(traceback.format_exc())
-            logger.error('Failed to establish Ebay API connection')
+            logger.error(u'Failed to establish Ebay API connection')
         self.total_count = 0
 
     def category_search(self, query):
@@ -180,7 +180,7 @@ class Ebay(object):
         )
         response = response.dict()
         logger.info(
-            'Got {} suggested categories for query {}'.format(
+            u'Got {} suggested categories for query {}'.format(
                 response['SuggestedCategoryArray']['SuggestedCategory'],
                 query
             )
@@ -201,7 +201,7 @@ class Ebay(object):
         item_dict = {
             'Item': {
                 'Title': item_obj.title,
-                'Description': '<![CDATA[{}]]>'.format(item_obj.html),
+                'Description': u'<![CDATA[{}]]>'.format(item_obj.html),
                 'PrimaryCategory': {'CategoryID': item_obj.category_id},
                 'StartPrice': item_obj.price,
                 'CategoryMappingAllowed': 'true',
