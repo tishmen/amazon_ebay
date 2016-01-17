@@ -186,12 +186,13 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         list_display = [
-            'title', 'get_url', 'get_price', 'reviewer', 'get_is_ready',
-            'get_is_listed', 'get_has_error', 'date_added'
+            'title', 'get_url', 'get_price', 'get_is_ready',
+            'get_has_error', 'get_is_listed', 'reviewer', 'date_added'
         ]
         if not request.user.is_superuser:
-            list_display.remove('reviewer')
             list_display.remove('get_is_listed')
+            list_display.remove('date_added')
+            list_display.remove('reviewer')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
@@ -202,9 +203,10 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_list_filter(self, request):
         if request.user.is_superuser:
             return [
-                IsReadyFilter, IsListedFilter, HasErrorFilter, 'reviewer',
+                IsReadyFilter, HasErrorFilter, IsListedFilter, 'reviewer',
                 'search__query', 'date_added'
             ]
+        return [IsReadyFilter, HasErrorFilter]
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
