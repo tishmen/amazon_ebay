@@ -12,18 +12,14 @@ from django.utils.encoding import python_2_unicode_compatible
 logger = logging.getLogger(__name__)
 
 
-def to_list(value):
-    return json.loads(value)
-
-
-def get_html(self, title, feature_list):
+def get_html(title, feature_list):
     html = '<div id="ds_div"><h1 class="p1" style="text-align: center;"><span'\
         ' class="s1"><strong>{}</strong></span></h1><h1 class="p2" style="tex'\
         't-align: center;"><span class="s1"><strong>Product Description:</str'\
         'ong></span></h1><h2><strong>&lt; Insert Description Here &gt;</stron'\
         'g></h2><h2>&nbsp;</h2><h2 class="p2"><span class="s1">Features:</spa'\
         'n></h2><ul class="ul1">'.format(title)
-    for feature in to_list(feature_list):
+    for feature in json.loads(feature_list):
         html += '<li class="li3"><span class="s1">{}</span></li>'.format(
             feature
         )
@@ -102,7 +98,7 @@ class AmazonItem(models.Model):
 
     def get_feature_list(self):
         feature_list = ''
-        for feature in to_list(self.feature_list):
+        for feature in json.loads(self.feature_list):
             if feature:
                 feature_list += '{}\n'.format(feature)
         return feature_list.strip()
@@ -111,13 +107,13 @@ class AmazonItem(models.Model):
         return get_html(self.title, self.feature_list)
 
     def get_image(self):
-        return '<img src="{}" />'.format(to_list(self.image_list)[0])
+        return '<img src="{}" />'.format(json.loads(self.image_list)[0])
 
     def get_price_markup(self):
         return math.ceil(self.price * settings.EBAY_ITEM_PERCENTAGE_MARKUP)
 
     def is_valid(self):
-        image_list = to_list(self.image_list)
+        image_list = json.loads(self.image_list)
         if len(image_list) < settings.MIN_AMAZON_ITEM_IMAGE_COUNT:
             logger.info(
                 'Less than minimum item image count {} for item {} with image '
@@ -218,7 +214,7 @@ class EbayItem(models.Model):
         return self.item.get_image()
 
     def get_image_list(self):
-        return to_list(self.item.image_list)
+        return json.loads(self.item.image_list)
 
     def get_error(self):
         return '<strong style="color:red">{}</strong>'.format(self.error)

@@ -96,7 +96,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     resource_class = AmazonSearchResource
     search_fields = ['query']
-    actions = ['search']
+    actions = ['search_action']
     list_filter = ['date_searched']
     list_display = ['query', 'result_count', 'date_searched']
 
@@ -134,7 +134,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
 
     result_count.admin_order_field = 'amazonitem__count'
 
-    def search(self, request, queryset):
+    def search_action(self, request, queryset):
         search_task.delay(queryset)
         message = 'Searching for amazon {}'.format(
             get_message_bit(queryset.count(), 'search', 'searches')
@@ -142,7 +142,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
         logger.info(message)
         self.message_user(request, message, level=messages.SUCCESS)
 
-    search.short_description = 'Search for selected amazon searches'
+    search_action.short_description = 'Search for selected amazon searches'
 
 
 @admin.register(AmazonItem)
@@ -156,7 +156,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
     fieldsets = [[None, {'fields': readonly_fields + ['reviewer']}]]
     inlines = [EbayItemInline]
     action_form = ChangeReviewerForm
-    actions = ['list', 'change_reviewer']
+    actions = ['list_action', 'change_reviewer_action']
 
     class Media:
         css = {'all': ['css/amazonitem_admin.css']}
@@ -177,7 +177,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         list_display = [
-            'title', 'get_url', 'get_price', 'reviewer', 'is_listed_',
+            'title', 'get_url', 'get_price', 'reviewer', 'get_is_listed',
             'date_added'
         ]
         if not request.user.is_superuser:
@@ -218,12 +218,12 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_image(self, obj):
         return mark_safe(obj.get_image())
 
-    def is_listed_(self, obj):
+    def get_is_listed(self, obj):
         return bool(obj.ebayitem_set.filter(is_listed=True))
 
-    is_listed_.boolean = True
+    get_is_listed.boolean = True
 
-    def list(self, request, queryset):
+    def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
         list_task.delay(queryset)
         message = 'Listing {}'.format(
@@ -231,17 +231,17 @@ class AmazonItemAdmin(admin.ModelAdmin):
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    list.short_description = 'List selected amazon items on ebay'
+    list_action.short_description = 'List selected amazon items on ebay'
 
-    def change_reviewer(self, request, queryset):
+    def change_reviewer_action(self, request, queryset):
         queryset.update(reviewer=request.POST.get('reviewer'))
         message = 'Changing reviewer for amazon {}'.format(
             get_message_bit(queryset.count(), 'item')
         )
         self.message_user(request, message, level=messages.SUCCESS)
 
-    change_reviewer.short_description = 'Change reviewer for selected amazon '\
-        'items'
+    change_reviewer_action.short_description = 'Change reviewer for selected '\
+        'amazon items'
 
 
 @admin.register(EbayItem)
