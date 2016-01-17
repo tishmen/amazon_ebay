@@ -16,15 +16,13 @@ class ReviewerForm(ActionForm):
 
 class EbayItemForm(forms.ModelForm):
 
-    html = forms.CharField(widget=CKEditorWidget())
+    html = forms.CharField(
+        widget=CKEditorWidget(attrs={'readonly': 'readonly'})
+    )
 
     class Meta:
         model = EbayItem
         fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super(EbayItemForm, self).__init__(*args, **kwargs)
-        self.fields['html'].widget.attrs['readonly'] = 'readonly'
 
 
 class EbayItemInlineForm(forms.ModelForm):

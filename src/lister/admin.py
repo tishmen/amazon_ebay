@@ -275,7 +275,7 @@ class EbayItemAdmin(admin.ModelAdmin):
     list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
     readonly_fields = [
         'url_', 'title', 'image', 'price_', 'category_name', 'manufacturer',
-        'mpn', 'upc', 'html'
+        'mpn', 'upc'
     ]
     fieldsets = [
         [
