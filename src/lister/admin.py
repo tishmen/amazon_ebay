@@ -1,4 +1,3 @@
-import copy
 import logging
 
 from import_export import resources
@@ -25,17 +24,11 @@ def get_message_bit(count, obj_name, obj_name_multiple=None):
     return '{} {}'.format(count, obj_name_multiple)
 
 
-# import-export resource classes
-
-
 class AmazonSearchResource(resources.ModelResource):
 
     class Meta:
         model = AmazonSearch
         exclude = ['date_searched']
-
-
-# extra admin filter classes
 
 
 class BoolFilter(admin.SimpleListFilter):
@@ -44,7 +37,7 @@ class BoolFilter(admin.SimpleListFilter):
         return [('1', 'Yes'), ('0', 'No')]
 
     def queryset(self, request, queryset):
-        val = int(self.value())
+        val = int(self.value() or 0)
         if not val:
             return queryset
         query = {self.query: None if not val else val}
@@ -64,8 +57,6 @@ class HasErrorFilter(BoolFilter):
     parameter_name = 'has_error'
     query = 'ebayitem__error'
 
-
-# admin inline classes
 
 class AmazonItemInline(admin.TabularInline):
 
@@ -98,8 +89,6 @@ class EbayItemInline(admin.StackedInline):
             fieldsets[0][1]['fields'] = ['error_'] + fieldsets[0][1]['fields']
         return fieldsets
 
-
-# admin views
 
 @admin.register(AmazonSearch)
 class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
@@ -188,7 +177,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
         list_display = [
             'title', 'url_', 'price_', 'reviewer', 'is_listed_', 'date_added'
         ]
-        if request.user.is_superuser:
+        if not request.user.is_superuser:
             list_display.remove('reviewer')
         return list_display
 
