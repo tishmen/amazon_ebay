@@ -24,7 +24,7 @@ class EbayItemForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(EbayItemForm, self).__init__(*args, **kwargs)
-        self.fields['html'].widget.attrs['readonly'] = "readonly"
+        self.fields['html'].widget.attrs['readonly'] = 'readonly'
 
 
 class EbayItemInlineForm(forms.ModelForm):
