@@ -179,6 +179,7 @@ class EbayItem(models.Model):
     mpn = models.CharField(max_length=65)
     upc = models.CharField(max_length=12, null=True, blank=True)
     note = models.TextField(null=True, blank=True)
+    is_ready = models.BooleanField(default=False)
     is_listed = models.BooleanField(default=False)
     date_listed = models.DateTimeField(null=True, blank=True)
     error = models.TextField(null=True, blank=True)

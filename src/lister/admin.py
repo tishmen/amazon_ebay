@@ -81,7 +81,8 @@ class EbayItemInline(admin.StackedInline):
     def get_fieldsets(self, request, obj):
         fields = [
             'title', 'price', 'html', 'category_search', 'category_id',
-            'category_name', 'manufacturer', 'mpn', 'upc', 'note'
+            'category_name', 'manufacturer', 'mpn', 'upc', 'is_ready',
+            'note'
         ]
         fieldsets = [[None, {'fields': fields}]]
         item = obj.ebayitem_set.first()
@@ -178,11 +179,12 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         list_display = [
-            'title', 'get_url', 'get_price', 'reviewer', 'get_is_reviewed',
+            'title', 'get_url', 'get_price', 'reviewer', 'get_is_ready',
             'get_is_listed', 'date_added'
         ]
         if not request.user.is_superuser:
             list_display.remove('reviewer')
+            list_display.remove('get_is_listed')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
@@ -227,11 +229,14 @@ class AmazonItemAdmin(admin.ModelAdmin):
     get_is_listed.boolean = True
     get_is_listed.short_description = 'is listed'
 
-    def get_is_reviewed(self, obj):
-        return bool(obj.ebayitem_set.all())
+    def get_is_ready(self, obj):
+        try:
+            return obj.ebayitem_set.all()[0].is_ready
+        except IndexError:
+            return False
 
-    get_is_reviewed.boolean = True
-    get_is_reviewed.short_description = 'is reviewed'
+    get_is_ready.boolean = True
+    get_is_ready.short_description = 'is ready'
 
     def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
