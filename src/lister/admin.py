@@ -15,6 +15,8 @@ from .tasks import search_task, list_task
 
 logger = logging.getLogger(__name__)
 
+BOOL_CHOICES = [('1', 'Yes'), ('0', 'No')]
+
 
 def get_message_bit(count, obj_name, obj_name_multiple=None):
     if count == 1:
@@ -31,38 +33,52 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
-class BoolFilter(admin.SimpleListFilter):
+class IsReadyFilter(admin.SimpleListFilter):
+
+    title = 'is ready'
+    parameter_name = 'is_ready'
 
     def lookups(self, request, model_admin):
-        return [('1', 'Yes'), ('0', 'No')]
+        return BOOL_CHOICES
 
     def queryset(self, request, queryset):
         val = int(self.value() or 0)
         if not val:
             return queryset
-        query = {self.query: None if not val else val}
-        return queryset.filter(**query)
+        return queryset.filter(ebayitem__is_ready=None if not val else val)
 
 
-class IsReadyFilter(BoolFilter):
-
-    title = 'is ready'
-    parameter_name = 'is_ready'
-    query = 'ebayitem__is_ready'
-
-
-class IsListedFilter(BoolFilter):
+class IsListedFilter(admin.SimpleListFilter):
 
     title = 'is listed'
     parameter_name = 'is_listed'
-    query = 'ebayitem__is_listed'
+
+    def lookups(self, request, model_admin):
+        return BOOL_CHOICES
+
+    def queryset(self, request, queryset):
+        val = int(self.value() or 0)
+        if not val:
+            return queryset
+        return queryset.filter(ebayitem__is_listed=None if not val else val)
 
 
-class HasErrorFilter(BoolFilter):
+class HasErrorFilter(admin.SimpleListFilter):
 
     title = 'has error'
     parameter_name = 'has_error'
-    query = 'ebayitem__error'
+
+    def lookups(self, request, model_admin):
+        return BOOL_CHOICES
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        print(type(val))
+        if val == '0':
+            return queryset.filter(ebayitem__error__exact=None)
+        if val == '1':
+            return queryset.filter(ebayitem__error__isnull=0)
+        return queryset
 
 
 class AmazonItemInline(admin.TabularInline):
