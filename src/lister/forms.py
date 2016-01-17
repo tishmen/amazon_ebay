@@ -82,8 +82,8 @@ class EbayItemInlineFormSet(forms.BaseInlineFormSet):
             self.initial = [
                 {
                     'title': amazon_item.title,
-                    'price': amazon_item.price_after_markup(),
-                    'html': amazon_item.html(),
+                    'price': amazon_item.get_price_markup(),
+                    'html': amazon_item.get_html(),
                     'category_search': amazon_item.search.query,
                     'manufacturer': amazon_item.manufacturer,
                     'mpn': amazon_item.mpn

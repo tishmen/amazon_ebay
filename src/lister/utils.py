@@ -23,8 +23,7 @@ class Amazon(object):
     def __init__(self):
         try:
             self.connection = AmazonAPI(
-                settings.AMAZON_ACCESS_KEY,
-                settings.AMAZON_SECRET_KEY,
+                settings.AMAZON_ACCESS_KEY, settings.AMAZON_SECRET_KEY,
                 settings.AMAZON_ASSOCIATE_TAG
             )
             logger.info('Established Amazon API connection')
@@ -159,17 +158,14 @@ class Ebay(object):
                 devid=settings.EBAY_DEVID,
                 appid=settings.EBAY_PRODUCTION_APPID,
                 certid=settings.EBAY_PRODUCTION_CERTID,
-                token=settings.EBAY_PRODUCTION_TOKEN,
-                config_file=None
+                token=settings.EBAY_PRODUCTION_TOKEN, config_file=None
             )
             logger.info('Established Ebay Production API connection')
             self.sandbox_connection = Trading(
-                domain='api.sandbox.ebay.com',
-                devid=settings.EBAY_DEVID,
+                domain='api.sandbox.ebay.com', devid=settings.EBAY_DEVID,
                 appid=settings.EBAY_SANDBOX_APPID,
                 certid=settings.EBAY_SANDBOX_CERTID,
-                token=settings.EBAY_SANDBOX_TOKEN,
-                config_file=None
+                token=settings.EBAY_SANDBOX_TOKEN, config_file=None
             )
             logger.info('Established Ebay Sandbox API connection')
         except:
@@ -220,7 +216,7 @@ class Ebay(object):
                 'PaymentMethods': 'PayPal',
                 'PayPalEmailAddress': 'joshwardini@gmail.com',
                 'PictureDetails': {
-                    'PictureURL': item_obj.image_list(),
+                    'PictureURL': item_obj.get_image_list(),
                 },
                 'ItemSpecifics': {
                     'NameValueList': [

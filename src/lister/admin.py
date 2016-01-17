@@ -61,7 +61,7 @@ class HasErrorFilter(BoolFilter):
 class AmazonItemInline(admin.TabularInline):
 
     model = AmazonItem
-    readonly_fields = ['', 'title_', 'url_', 'price_']
+    readonly_fields = ['', 'get_title', 'get_url', 'get_price']
     fieldsets = [[None, {'fields': readonly_fields}]]
     can_delete = False
     extra = 0
@@ -73,7 +73,7 @@ class EbayItemInline(admin.StackedInline):
     model = EbayItem
     formset = EbayItemInlineFormSet
     form = EbayItemInlineForm
-    readonly_fields = ['error_']
+    readonly_fields = ['get_error']
     can_delete = False
     extra = 0
     max_num = 1
@@ -86,7 +86,8 @@ class EbayItemInline(admin.StackedInline):
         fieldsets = [[None, {'fields': fields}]]
         item = obj.ebayitem_set.first()
         if item and item.error:
-            fieldsets[0][1]['fields'] = ['error_'] + fieldsets[0][1]['fields']
+            fieldsets[0][1]['fields'] = ['get_error'] + \
+                fieldsets[0][1]['fields']
         return fieldsets
 
 
@@ -149,7 +150,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     search_fields = ['title', 'manufacturer', 'mpn']
     readonly_fields = [
-        'url_', 'title', 'image', 'price_', 'review_count', 'feature_list_',
+        'get_url', 'title', 'get_image', 'get_price', 'review_count',
+        'get_feature_list',
     ]
     fieldsets = [[None, {'fields': readonly_fields + ['reviewer']}]]
     inlines = [EbayItemInline]
@@ -175,7 +177,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         list_display = [
-            'title', 'url_', 'price_', 'reviewer', 'is_listed_', 'date_added'
+            'title', 'get_url', 'get_price', 'reviewer', 'is_listed_',
+            'date_added'
         ]
         if not request.user.is_superuser:
             list_display.remove('reviewer')
@@ -212,8 +215,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
             form.base_fields['reviewer'].widget.can_change_related = False
         return form
 
-    def image(self, obj):
-        return mark_safe(obj.image())
+    def get_image(self, obj):
+        return mark_safe(obj.get_image())
 
     def is_listed_(self, obj):
         return bool(obj.ebayitem_set.filter(is_listed=True))
@@ -245,11 +248,13 @@ class AmazonItemAdmin(admin.ModelAdmin):
 class EbayItemAdmin(admin.ModelAdmin):
 
     fields_ = [
-        'url_', 'title', 'image', 'price_', 'category_name', 'manufacturer',
-        'mpn', 'upc'
+        'get_url', 'title', 'get_image', 'get_price', 'category_name',
+        'manufacturer', 'mpn', 'upc'
     ]
 
-    list_display = ['title', 'ebay_url', 'amazon_url', 'price_', 'date_listed']
+    list_display = [
+        'title', 'get_ebay_url', 'get_amazon_url', 'get_price', 'date_listed'
+    ]
     search_fields = ['title', 'manufacturer', 'mpn']
     fieldsets = [[None, {'fields': fields_}]]
     readonly_fields = fields_ + ['html']
@@ -271,5 +276,5 @@ class EbayItemAdmin(admin.ModelAdmin):
             del actions['delete_selected']
         return actions
 
-    def image(self, obj):
-        return mark_safe(obj.image())
+    def get_image(self, obj):
+        return mark_safe(obj.get_image())
