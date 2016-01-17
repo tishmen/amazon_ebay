@@ -219,6 +219,8 @@ class AmazonItemAdmin(admin.ModelAdmin):
     def get_image(self, obj):
         return mark_safe(obj.get_image())
 
+    get_image.short_description = 'image'
+
     def get_is_listed(self, obj):
         return bool(obj.ebayitem_set.filter(is_listed=True))
 
@@ -286,3 +288,5 @@ class EbayItemAdmin(admin.ModelAdmin):
 
     def get_image(self, obj):
         return mark_safe(obj.get_image())
+
+    get_image.short_description = 'image'

@@ -45,8 +45,7 @@ def get_html(title, feature_list):
         ' to initiating a return so that we can issue you a refund authorizat'\
         'ion.</p><h3>Payment Policy</h3><p>We require Immediate Payment. Must'\
         ' be an authorized address.</p></div><p>Thank you for viewing the {}<'\
-        '/p>'.format(title)
-    return html
+        '/p>'.format(title).encode('utf-8')
 
 
 @python_2_unicode_compatible
@@ -74,7 +73,7 @@ class AmazonItem(models.Model):
     price = models.FloatField()
     manufacturer = models.TextField(null=True, blank=True)
     mpn = models.TextField(null=True, blank=True)
-    review_count = models.PositiveIntegerField()
+    review_count = models.PositiveIntegerField(verbose_name='reviews')
     date_added = models.DateTimeField(auto_now_add=True)
 
     def get_url(self):
@@ -102,6 +101,8 @@ class AmazonItem(models.Model):
             if feature:
                 feature_list += '{}\n'.format(feature)
         return feature_list.strip()
+
+    get_feature_list.short_description = 'features'
 
     def get_html(self):
         return get_html(self.title, self.feature_list)
@@ -219,6 +220,7 @@ class EbayItem(models.Model):
     def get_error(self):
         return '<strong style="color:red">{}</strong>'.format(self.error)
 
+    get_error.short_description = 'error'
     get_error.allow_tags = True
 
     def __str__(self):
