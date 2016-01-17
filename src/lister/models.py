@@ -113,6 +113,9 @@ class AmazonItem(models.Model):
     def get_price_markup(self):
         return math.ceil(self.price * settings.EBAY_ITEM_PERCENTAGE_MARKUP)
 
+    def get_related_ebay_item(self):
+        return self.ebayitem_set.first()
+
     def is_valid(self):
         image_list = json.loads(self.image_list)
         if len(image_list) < settings.MIN_AMAZON_ITEM_IMAGE_COUNT:

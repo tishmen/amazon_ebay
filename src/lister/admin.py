@@ -85,7 +85,7 @@ class EbayItemInline(admin.StackedInline):
             'note'
         ]
         fieldsets = [[None, {'fields': fields}]]
-        item = obj.ebayitem_set.first()
+        item = obj.get_related_ebay_item()
         if item and item.error:
             fieldsets[0][1]['fields'] = ['get_error'] + \
                 fieldsets[0][1]['fields']
@@ -224,14 +224,14 @@ class AmazonItemAdmin(admin.ModelAdmin):
     get_image.short_description = 'image'
 
     def get_is_listed(self, obj):
-        return bool(obj.ebayitem_set.filter(is_listed=True))
+        return bool(obj.get_related_ebay_item())
 
     get_is_listed.boolean = True
     get_is_listed.short_description = 'is listed'
 
     def get_is_ready(self, obj):
         try:
-            return obj.ebayitem_set.all()[0].is_ready
+            return obj.get_related_ebay_item().is_ready
         except IndexError:
             return False
 
