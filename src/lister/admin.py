@@ -5,6 +5,7 @@ from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
 from django.db import models
+from django.db.models import Count, Case, When, Value, BooleanField
 from django.utils.safestring import mark_safe
 
 from .forms import (
@@ -221,6 +222,13 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super(AmazonItemAdmin, self).get_queryset(request)
+        queryset = queryset.annotate(
+            has_error=Case(
+                When(ebayitem__error__isnull=0, then=Value(1)),
+                default=Value(0),
+                output_field=BooleanField()
+            )
+        )
         if not request.user.is_superuser:
             return queryset.filter(reviewer=request.user)
         return queryset
@@ -268,7 +276,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     get_has_error.boolean = True
     get_has_error.short_description = 'has error'
-    get_has_error.admin_order_field = 'ebayitem__error'
+    get_has_error.admin_order_field = 'has_error'
 
     def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
