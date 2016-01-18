@@ -33,6 +33,23 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
+class IsSearchedFilter(admin.SimpleListFilter):
+
+    title = 'is searched'
+    parameter_name = 'is_searched'
+
+    def lookups(self, request, model_admin):
+        return BOOL_CHOICES
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val == '0':
+            return queryset.filter(date_searched__isnull=1)
+        if val == '1':
+            return queryset.filter(date_searched__isnull=0)
+        return queryset
+
+
 class IsReadyFilter(admin.SimpleListFilter):
 
     title = 'is ready'
@@ -73,7 +90,6 @@ class HasErrorFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         val = self.value()
-        print(type(val))
         if val == '0':
             return queryset.filter(ebayitem__error__exact=None)
         if val == '1':
@@ -121,7 +137,7 @@ class AmazonSearchAdmin(ImportMixin, admin.ModelAdmin):
     resource_class = AmazonSearchResource
     search_fields = ['query']
     actions = ['search_action']
-    list_filter = ['date_searched']
+    list_filter = [IsSearchedFilter, 'date_searched']
     list_display = ['query', 'get_result_count', 'date_searched']
 
     def has_delete_permission(self, request, obj=None):
