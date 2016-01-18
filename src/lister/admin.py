@@ -97,14 +97,16 @@ class EbayItemInline(admin.StackedInline):
     def get_fieldsets(self, request, obj):
         fields = [
             'title', 'price', 'html', 'category_search', 'category_id',
-            'category_name', 'manufacturer', 'mpn', 'upc', 'is_ready',
-            'note'
+            'category_name', 'manufacturer', 'mpn', 'upc', 'note', 'is_ready'
         ]
         fieldsets = [[None, {'fields': fields}]]
         item = obj.get_related_ebay_item()
-        if item and item.error:
-            fieldsets[0][1]['fields'] = ['get_error'] + \
-                fieldsets[0][1]['fields']
+        if item:
+            if item.error:
+                fieldsets[0][1]['fields'] = ['get_error'] + \
+                    fieldsets[0][1]['fields']
+            if item.is_listed:
+                fieldsets[0][1]['fields'].remove('is_ready')
         return fieldsets
 
 
