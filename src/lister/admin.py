@@ -15,7 +15,7 @@ from .tasks import search_task, list_task
 
 logger = logging.getLogger(__name__)
 
-BOOL_CHOICES = [('1', 'Yes'), ('0', 'No')]
+BOOL_CHOICES = [(1, 'Yes'), (0, 'No')]
 
 
 def get_message_bit(count, obj_name, obj_name_multiple=None):
@@ -33,68 +33,45 @@ class AmazonSearchResource(resources.ModelResource):
         exclude = ['date_searched']
 
 
-class IsSearchedFilter(admin.SimpleListFilter):
+class BoolFilter(admin.SimpleListFilter):
+
+    def lookups(self, request, model_admin):
+        return BOOL_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value() == '0':
+            return queryset.exclude(**self.query)
+        if self.value() == '1':
+            return queryset.filter(**self.query)
+        return queryset
+
+
+class IsSearchedFilter(BoolFilter):
 
     title = 'is searched'
     parameter_name = 'is_searched'
-
-    def lookups(self, request, model_admin):
-        return BOOL_CHOICES
-
-    def queryset(self, request, queryset):
-        val = self.value()
-        if val == '0':
-            return queryset.filter(date_searched__isnull=1)
-        if val == '1':
-            return queryset.filter(date_searched__isnull=0)
-        return queryset
+    query = {'date_searched__isnull': False}
 
 
-class IsReadyFilter(admin.SimpleListFilter):
+class IsReadyFilter(BoolFilter):
 
     title = 'is ready'
     parameter_name = 'is_ready'
-
-    def lookups(self, request, model_admin):
-        return BOOL_CHOICES
-
-    def queryset(self, request, queryset):
-        val = int(self.value() or 0)
-        if not val:
-            return queryset
-        return queryset.filter(ebayitem__is_ready=None if not val else val)
+    query = {'ebayitem__is_ready': True}
 
 
-class IsListedFilter(admin.SimpleListFilter):
+class IsListedFilter(BoolFilter):
 
     title = 'is listed'
     parameter_name = 'is_listed'
-
-    def lookups(self, request, model_admin):
-        return BOOL_CHOICES
-
-    def queryset(self, request, queryset):
-        val = int(self.value() or 0)
-        if not val:
-            return queryset
-        return queryset.filter(ebayitem__is_listed=None if not val else val)
+    query = {'ebayitem__is_listed': True}
 
 
-class HasErrorFilter(admin.SimpleListFilter):
+class HasErrorFilter(BoolFilter):
 
     title = 'has error'
     parameter_name = 'has_error'
-
-    def lookups(self, request, model_admin):
-        return BOOL_CHOICES
-
-    def queryset(self, request, queryset):
-        val = self.value()
-        if val == '0':
-            return queryset.filter(ebayitem__error__exact=None)
-        if val == '1':
-            return queryset.filter(ebayitem__error__isnull=0)
-        return queryset
+    query = {'ebayitem__error__isnull': False}
 
 
 class AmazonItemInline(admin.TabularInline):
