@@ -248,6 +248,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     get_is_listed.boolean = True
     get_is_listed.short_description = 'is listed'
+    get_is_listed.admin_order_field = 'ebayitem__is_listed'
 
     def get_is_ready(self, obj):
         try:
@@ -257,6 +258,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     get_is_ready.boolean = True
     get_is_ready.short_description = 'is ready'
+    get_is_ready.admin_order_field = 'ebayitem__is_ready'
 
     def get_has_error(self, obj):
         try:
@@ -266,6 +268,7 @@ class AmazonItemAdmin(admin.ModelAdmin):
 
     get_has_error.boolean = True
     get_has_error.short_description = 'has error'
+    get_has_error.admin_order_field = 'ebayitem__error'
 
     def list_action(self, request, queryset):
         queryset = queryset.filter(ebayitem__is_listed=False)
@@ -324,3 +327,8 @@ class EbayItemAdmin(admin.ModelAdmin):
         return mark_safe(obj.get_image())
 
     get_image.short_description = 'image'
+
+    def get_amazon_url(self, obj):
+        return mark_safe(obj.get_amazon_url())
+
+    get_amazon_url.admin_order_field = 'item__url'
