@@ -155,14 +155,15 @@ class Ebay(object):
     def __init__(self):
         try:
             self.production_connection = Trading(
-                devid=settings.EBAY_DEVID,
+                devid=settings.EBAY_PRODUCTION_DEVID,
                 appid=settings.EBAY_PRODUCTION_APPID,
                 certid=settings.EBAY_PRODUCTION_CERTID,
                 token=settings.EBAY_PRODUCTION_TOKEN, config_file=None
             )
             logger.info(u'Established Ebay Production API connection')
             self.sandbox_connection = Trading(
-                domain='api.sandbox.ebay.com', devid=settings.EBAY_DEVID,
+                domain='api.sandbox.ebay.com',
+                devid=settings.EBAY_SANDBOX_DEVID,
                 appid=settings.EBAY_SANDBOX_APPID,
                 certid=settings.EBAY_SANDBOX_CERTID,
                 token=settings.EBAY_SANDBOX_TOKEN, config_file=None

@@ -5,7 +5,7 @@ from import_export.admin import ImportMixin
 
 from django.contrib import admin, messages
 from django.db import models
-from django.db.models import Count, Case, When, Value, BooleanField
+from django.db.models import Case, When, Value, BooleanField
 from django.utils.safestring import mark_safe
 
 from .forms import (
